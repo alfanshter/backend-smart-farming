@@ -1,98 +1,329 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🌱 Smart Farming Backend - Clean Architecture + MQTT
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend untuk sistem penyiraman otomatis menggunakan **Clean Architecture** dan **MQTT Protocol**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📚 Penjelasan Clean Architecture (untuk Newbie)
 
-## Description
+Clean Architecture itu kayak rumah berlapis:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ pnpm install
+```
+┌─────────────────────────────────────┐
+│   PRESENTATION (REST API)           │ ← User/Frontend berinteraksi di sini
+├─────────────────────────────────────┤
+│   APPLICATION (DTOs, Services)      │ ← Validasi dan format data
+├─────────────────────────────────────┤
+│   DOMAIN (Entities, Use Cases)      │ ← INTI BISNIS (aturan penyiraman)
+├─────────────────────────────────────┤
+│   INFRASTRUCTURE (MQTT, Database)   │ ← Teknologi (bisa diganti kapan saja)
+└─────────────────────────────────────┘
 ```
 
-## Compile and run the project
+**Kenapa pakai Clean Architecture?**
+- ✅ Mudah di-test
+- ✅ Mudah ganti teknologi (misal: ganti database, use case tetap sama)
+- ✅ Kode lebih rapi dan terstruktur
+- ✅ Tim bisa kerja paralel di layer berbeda
 
-```bash
-# development
-$ pnpm run start
+## 🏗️ Struktur Folder
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+```
+src/
+├── domain/                          # INTI BISNIS
+│   ├── entities/                    # Model data (Device, Sensor, Schedule)
+│   │   ├── Device.ts
+│   │   ├── Sensor.ts
+│   │   └── WateringSchedule.ts
+│   ├── interfaces/                  # Kontrak/Interface
+│   │   ├── IMqttClient.ts
+│   │   ├── IDeviceRepository.ts
+│   │   ├── ISensorRepository.ts
+│   │   └── IWateringScheduleRepository.ts
+│   └── use-cases/                   # Logika bisnis utama
+│       ├── ControlWateringUseCase.ts
+│       ├── GetSensorDataUseCase.ts
+│       └── ProcessSensorDataUseCase.ts
+│
+├── infrastructure/                  # TEKNOLOGI LUAR
+│   ├── mqtt/                        # MQTT Client & Service
+│   │   ├── MqttClient.ts
+│   │   └── MqttService.ts
+│   └── repositories/                # Database (in-memory sementara)
+│       ├── InMemoryDeviceRepository.ts
+│       ├── InMemorySensorRepository.ts
+│       └── InMemoryWateringScheduleRepository.ts
+│
+├── application/                     # LAYER APLIKASI
+│   └── dtos/                        # Data Transfer Objects
+│       ├── CreateDeviceDto.ts
+│       ├── ControlWateringDto.ts
+│       └── CreateScheduleDto.ts
+│
+├── presentation/                    # LAYER PRESENTASI
+│   └── controllers/                 # REST API Controllers
+│       ├── DeviceController.ts
+│       └── WateringController.ts
+│
+├── SmartFarmingModule.ts           # NestJS Module utama
+└── main.ts                          # Entry point
 ```
 
-## Run tests
+## 🚀 Cara Pakai
+
+### 1. Install Dependencies
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm install
 ```
 
-## Deployment
+### 2. Setup MQTT Broker
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+**Opsi A: Install Mosquitto (Local)**
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# macOS
+brew install mosquitto
+brew services start mosquitto
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Opsi B: Gunakan HiveMQ Cloud (Gratis)**
 
-## Resources
+1. Daftar di https://www.hivemq.com/mqtt-cloud-broker/
+2. Buat cluster
+3. Copy URL, username, password
+4. Update `.env`
 
-Check out a few resources that may come in handy when working with NestJS:
+### 3. Setup Environment
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+cp .env.example .env
+# Edit .env sesuai konfigurasi MQTT broker Anda
+```
 
-## Support
+### 4. Jalankan Server
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+pnpm run start:dev
+```
 
-## Stay in touch
+Server akan jalan di `http://localhost:3000`
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 📡 MQTT Topics
 
-## License
+```
+smartfarm/+/sensor    → Device mengirim data sensor
+smartfarm/+/status    → Device mengirim status (online/offline)
+smartfarm/device123   → Backend mengirim command ke device tertentu
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Contoh Payload Sensor:**
+
+```json
+{
+  "deviceId": "device-123",
+  "type": "SOIL_MOISTURE",
+  "value": 25.5,
+  "unit": "%",
+  "metadata": {
+    "location": "Zona A"
+  }
+}
+```
+
+**Contoh Payload Command (Backend → Device):**
+
+```json
+{
+  "action": "ON",
+  "duration": 300,
+  "timestamp": "2026-01-25T10:00:00Z"
+}
+```
+
+## 🔌 REST API Endpoints
+
+### Devices
+
+```http
+POST   /devices              # Buat device baru
+GET    /devices              # List semua device
+GET    /devices/:id          # Detail device
+PUT    /devices/:id/activate # Aktifkan device
+PUT    /devices/:id/deactivate # Nonaktifkan device
+DELETE /devices/:id          # Hapus device
+```
+
+### Watering
+
+```http
+POST /watering/control       # Kontrol penyiraman manual
+GET  /watering/sensor/:deviceId  # Lihat data sensor
+POST /watering/schedule      # Buat jadwal penyiraman
+GET  /watering/schedule      # List semua jadwal
+GET  /watering/schedule/:id  # Detail jadwal
+```
+
+## 📝 Contoh Request
+
+### 1. Buat Device Baru
+
+```bash
+curl -X POST http://localhost:3000/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Pompa Air Zona 1",
+    "type": "PUMP",
+    "mqttTopic": "smartfarm/pump1",
+    "isActive": true
+  }'
+```
+
+### 2. Kontrol Penyiraman Manual
+
+```bash
+curl -X POST http://localhost:3000/watering/control \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceId": "device-id-here",
+    "action": "ON",
+    "duration": 300
+  }'
+```
+
+### 3. Buat Jadwal Time-Based
+
+```bash
+curl -X POST http://localhost:3000/watering/schedule \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Penyiraman Pagi",
+    "deviceId": "device-id-here",
+    "type": "TIME_BASED",
+    "startTime": "06:00",
+    "duration": 600,
+    "daysOfWeek": [0, 1, 2, 3, 4, 5, 6],
+    "isActive": true
+  }'
+```
+
+### 4. Buat Jadwal Sensor-Based
+
+```bash
+curl -X POST http://localhost:3000/watering/schedule \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Auto Watering - Kelembaban Rendah",
+    "deviceId": "device-id-here",
+    "type": "SENSOR_BASED",
+    "moistureThreshold": 30,
+    "duration": 300,
+    "isActive": true
+  }'
+```
+
+## 🧪 Testing dengan MQTT Client
+
+Install MQTT client untuk testing:
+
+```bash
+npm install -g mqtt
+```
+
+**Subscribe ke topic:**
+
+```bash
+mqtt subscribe -t 'smartfarm/#' -h localhost -v
+```
+
+**Publish sensor data:**
+
+```bash
+mqtt publish -t 'smartfarm/device123/sensor' \
+  -h localhost \
+  -m '{"deviceId":"device-123","type":"SOIL_MOISTURE","value":25.5,"unit":"%"}'
+```
+
+## 🎯 Flow Penyiraman Otomatis
+
+### Scenario 1: Sensor-Based (Otomatis berdasarkan kelembaban)
+
+```
+1. Sensor di lapangan kirim data kelembaban → MQTT
+2. MqttService terima data → ProcessSensorDataUseCase
+3. Use case cek jadwal sensor-based yang aktif
+4. Jika kelembaban < threshold (misal: 30%):
+   → Trigger ControlWateringUseCase
+   → Kirim command "ON" ke pompa via MQTT
+5. Pompa menyala selama durasi yang ditentukan
+```
+
+### Scenario 2: Time-Based (Otomatis berdasarkan jadwal)
+
+```
+1. Cron job cek jadwal time-based (bisa pakai @nestjs/schedule)
+2. Jika waktu sekarang = waktu jadwal:
+   → Trigger ControlWateringUseCase
+   → Kirim command "ON" ke pompa via MQTT
+3. Pompa menyala selama durasi yang ditentukan
+```
+
+### Scenario 3: Manual
+
+```
+1. User klik tombol di frontend
+2. Frontend kirim POST /watering/control
+3. Controller panggil ControlWateringUseCase
+4. Use case kirim command via MQTT
+5. Pompa menyala/mati sesuai command
+```
+
+## 🔄 Penjelasan Flow Data
+
+```
+┌─────────┐     MQTT      ┌─────────────┐
+│ ESP32   │ ────────────→ │ MqttService │
+│ Sensor  │               └──────┬──────┘
+└─────────┘                      │
+                                 ↓
+                        ProcessSensorDataUseCase
+                                 │
+                    ┌────────────┼────────────┐
+                    ↓                         ↓
+            Save to Database     Cek Jadwal Sensor-Based
+                                         │
+                                         ↓ (jika kelembaban rendah)
+                              ControlWateringUseCase
+                                         │
+                                         ↓
+                      Publish MQTT → ESP32 Pompa ON
+```
+
+## 🛠️ Pengembangan Selanjutnya
+
+1. **Database Real:** Ganti in-memory repository dengan MongoDB/PostgreSQL
+2. **Cron Jobs:** Implementasi penjadwalan time-based pakai `@nestjs/schedule`
+3. **Authentication:** Tambah JWT untuk security
+4. **WebSocket:** Real-time update ke frontend
+5. **Logging:** Tambah logger untuk monitoring
+6. **Testing:** Unit test & integration test
+7. **Docker:** Containerize aplikasi
+
+## 📦 Tech Stack
+
+- **NestJS** - Framework backend
+- **TypeScript** - Type-safe JavaScript
+- **MQTT** - IoT messaging protocol
+- **Clean Architecture** - Software design pattern
+
+## 📖 Belajar Lebih Lanjut
+
+- [Clean Architecture by Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [MQTT Protocol](https://mqtt.org/)
+- [NestJS Documentation](https://docs.nestjs.com/)
+
+## 🤝 Contributing
+
+Silakan fork dan submit PR!
+
+## 📄 License
+
+MIT
