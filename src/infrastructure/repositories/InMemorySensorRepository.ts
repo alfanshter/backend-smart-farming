@@ -10,22 +10,22 @@ import { Sensor } from '../../domain/entities/Sensor';
 export class InMemorySensorRepository implements ISensorRepository {
   private sensors: Map<string, Sensor> = new Map();
 
-  async create(sensor: Sensor): Promise<Sensor> {
+  create(sensor: Sensor): Promise<Sensor> {
     this.sensors.set(sensor.id, sensor);
-    return sensor;
+    return Promise.resolve(sensor);
   }
 
-  async findById(id: string): Promise<Sensor | null> {
-    return this.sensors.get(id) || null;
+  findById(id: string): Promise<Sensor | null> {
+    return Promise.resolve(this.sensors.get(id) || null);
   }
 
-  async findAll(): Promise<Sensor[]> {
-    return Array.from(this.sensors.values());
+  findAll(): Promise<Sensor[]> {
+    return Promise.resolve(Array.from(this.sensors.values()));
   }
 
-  async findByDeviceId(deviceId: string): Promise<Sensor[]> {
-    return Array.from(this.sensors.values()).filter(
-      (s) => s.deviceId === deviceId,
+  findByDeviceId(deviceId: string): Promise<Sensor[]> {
+    return Promise.resolve(
+      Array.from(this.sensors.values()).filter((s) => s.deviceId === deviceId),
     );
   }
 
@@ -38,7 +38,7 @@ export class InMemorySensorRepository implements ISensorRepository {
     )[0];
   }
 
-  async delete(id: string): Promise<boolean> {
-    return this.sensors.delete(id);
+  delete(id: string): Promise<boolean> {
+    return Promise.resolve(this.sensors.delete(id));
   }
 }

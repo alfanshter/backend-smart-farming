@@ -16,40 +16,44 @@ import { Device, DeviceType } from '../../domain/entities/Device';
 export class InMemoryDeviceRepository implements IDeviceRepository {
   private devices: Map<string, Device> = new Map();
 
-  async create(device: Device): Promise<Device> {
+  create(device: Device): Promise<Device> {
     this.devices.set(device.id, device);
-    return device;
+    return Promise.resolve(device);
   }
 
-  async findById(id: string): Promise<Device | null> {
-    return this.devices.get(id) || null;
+  findById(id: string): Promise<Device | null> {
+    return Promise.resolve(this.devices.get(id) || null);
   }
 
-  async findAll(): Promise<Device[]> {
-    return Array.from(this.devices.values());
+  findAll(): Promise<Device[]> {
+    return Promise.resolve(Array.from(this.devices.values()));
   }
 
-  async findByType(type: string): Promise<Device[]> {
-    return Array.from(this.devices.values()).filter((d) => d.type === type);
+  findByType(type: string): Promise<Device[]> {
+    return Promise.resolve(
+      Array.from(this.devices.values()).filter(
+        (d) => d.type === (type as DeviceType),
+      ),
+    );
   }
 
-  async update(id: string, updates: Partial<Device>): Promise<Device | null> {
+  update(id: string, updates: Partial<Device>): Promise<Device | null> {
     const device = this.devices.get(id);
-    if (!device) return null;
+    if (!device) return Promise.resolve(null);
 
     const updated = Object.assign(device, updates);
     this.devices.set(id, updated);
-    return updated;
+    return Promise.resolve(updated);
   }
 
-  async delete(id: string): Promise<boolean> {
-    return this.devices.delete(id);
+  delete(id: string): Promise<boolean> {
+    return Promise.resolve(this.devices.delete(id));
   }
 
-  async findByMqttTopic(topic: string): Promise<Device | null> {
-    return (
+  findByMqttTopic(topic: string): Promise<Device | null> {
+    const device =
       Array.from(this.devices.values()).find((d) => d.mqttTopic === topic) ||
-      null
-    );
+      null;
+    return Promise.resolve(device);
   }
 }

@@ -13,6 +13,20 @@ import { DeviceStatus } from '../../domain/entities/Device';
 import { MqttClient } from './MqttClient';
 import { InMemoryDeviceRepository } from '../repositories/InMemoryDeviceRepository';
 
+// Interfaces untuk MQTT message payloads
+interface SensorMessagePayload {
+  deviceId: string;
+  type: SensorType;
+  value: number;
+  unit: string;
+  metadata?: Record<string, any>;
+}
+
+interface DeviceStatusPayload {
+  deviceId: string;
+  status: DeviceStatus;
+}
+
 @Injectable()
 export class MqttService implements OnModuleInit {
   constructor(
@@ -34,13 +48,13 @@ export class MqttService implements OnModuleInit {
     }
 
     // Subscribe ke topic sensor data
-    await this.mqttClient.subscribe('smartfarm/+/sensor', async (message) => {
-      await this.handleSensorMessage(message);
+    await this.mqttClient.subscribe('smartfarm/+/sensor', (message) => {
+      void this.handleSensorMessage(message);
     });
 
     // Subscribe ke topic device status
-    await this.mqttClient.subscribe('smartfarm/+/status', async (message) => {
-      await this.handleDeviceStatus(message);
+    await this.mqttClient.subscribe('smartfarm/+/status', (message) => {
+      void this.handleDeviceStatus(message);
     });
 
     console.log('🎧 MQTT Service listening for messages...');
@@ -48,13 +62,13 @@ export class MqttService implements OnModuleInit {
 
   private async handleSensorMessage(message: string): Promise<void> {
     try {
-      const data = JSON.parse(message);
+      const data = JSON.parse(message) as SensorMessagePayload;
 
       // Buat Sensor entity
       const sensor = new Sensor(
         crypto.randomUUID(),
         data.deviceId,
-        data.type as SensorType,
+        data.type,
         data.value,
         data.unit,
         new Date(),
@@ -80,12 +94,12 @@ export class MqttService implements OnModuleInit {
 
   private async handleDeviceStatus(message: string): Promise<void> {
     try {
-      const data = JSON.parse(message);
+      const data = JSON.parse(message) as DeviceStatusPayload;
 
       // Update device status
       const device = await this.deviceRepository.findById(data.deviceId);
       if (device) {
-        device.updateStatus(data.status as DeviceStatus);
+        device.updateStatus(data.status);
         await this.deviceRepository.update(data.deviceId, device);
         console.log(`📱 Device ${device.name} status: ${data.status}`);
       }

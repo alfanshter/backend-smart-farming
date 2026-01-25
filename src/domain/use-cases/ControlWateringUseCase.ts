@@ -67,9 +67,11 @@ export class ControlWateringUseCase {
         message: `Berhasil ${command.action === 'ON' ? 'menyalakan' : 'mematikan'} ${device.name}`,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
-        message: `Gagal mengirim command: ${error.message}`,
+        message: `Gagal mengirim command: ${errorMessage}`,
       };
     }
   }

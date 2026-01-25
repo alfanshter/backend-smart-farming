@@ -42,7 +42,7 @@ export class MqttClient implements IMqttClient, OnModuleInit, OnModuleDestroy {
     const username = this.configService.get<string>('MQTT_USERNAME');
     const password = this.configService.get<string>('MQTT_PASSWORD');
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.client = mqtt.connect(brokerUrl, {
         username,
         password,
