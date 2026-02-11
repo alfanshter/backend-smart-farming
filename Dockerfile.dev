@@ -1,0 +1,27 @@
+# Development Dockerfile with hot-reload
+FROM node:20-alpine
+
+# Install pnpm and postgresql-client for wait script
+RUN npm install -g pnpm && \
+    apk add --no-cache postgresql-client
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (including dev)
+RUN pnpm install --frozen-lockfile
+
+# Copy wait script
+COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
+RUN chmod +x /usr/local/bin/wait-for-db.sh
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3001
+
+# Wait for database then start in development mode
+CMD ["/usr/local/bin/wait-for-db.sh", "pnpm", "run", "start:dev"]

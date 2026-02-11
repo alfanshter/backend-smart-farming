@@ -42,22 +42,27 @@ export class MqttClient implements IMqttClient, OnModuleInit, OnModuleDestroy {
     const username = this.configService.get<string>('MQTT_USERNAME');
     const password = this.configService.get<string>('MQTT_PASSWORD');
 
+    console.log('🔌 Attempting to connect to MQTT broker:', brokerUrl);
+
     return new Promise((resolve) => {
       this.client = mqtt.connect(brokerUrl, {
         username,
         password,
         clean: true,
         reconnectPeriod: 5000,
-        connectTimeout: 5000, // 5 detik timeout
+        connectTimeout: 10000, // 10 detik timeout untuk SSL
+        rejectUnauthorized: false, // Untuk HiveMQ Cloud
       });
 
-      // Timeout jika tidak connect dalam 6 detik
+      // Timeout jika tidak connect dalam 12 detik
       const timeout = setTimeout(() => {
         console.warn(
           '⚠️  MQTT broker tidak tersedia. Server tetap jalan tanpa MQTT.',
         );
+        console.log('   Broker URL:', brokerUrl);
+        console.log('   Username:', username ? '✅ Set' : '❌ Not set');
         resolve(); // Resolve tanpa error
-      }, 6000);
+      }, 12000);
 
       this.client.on('connect', () => {
         clearTimeout(timeout);
@@ -75,9 +80,16 @@ export class MqttClient implements IMqttClient, OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('message', (topic, payload) => {
-        const callback = this.subscriptions.get(topic);
-        if (callback) {
-          callback(payload.toString());
+        console.log('📥 MQTT Message Received:');
+        console.log('   Topic:', topic);
+        console.log('   Payload:', payload.toString());
+
+        // Check all subscriptions for wildcard matches
+        for (const [pattern, callback] of this.subscriptions) {
+          if (this.topicMatches(pattern, topic)) {
+            console.log(`   ✅ Matched pattern: ${pattern}`);
+            callback(payload.toString());
+          }
         }
       });
     });
@@ -157,5 +169,39 @@ export class MqttClient implements IMqttClient, OnModuleInit, OnModuleDestroy {
 
   isConnected(): boolean {
     return this.client?.connected ?? false;
+  }
+
+  // Helper method untuk match wildcard topics (+ dan #)
+  private topicMatches(pattern: string, topic: string): boolean {
+    const patternParts = pattern.split('/');
+    const topicParts = topic.split('/');
+
+    // # wildcard harus di akhir dan match semua level
+    if (pattern.includes('#')) {
+      const hashIndex = patternParts.indexOf('#');
+      if (hashIndex !== patternParts.length - 1) {
+        return false; // # hanya boleh di akhir
+      }
+      // Check parts sebelum #
+      for (let i = 0; i < hashIndex; i++) {
+        if (patternParts[i] !== topicParts[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // + wildcard match single level
+    if (patternParts.length !== topicParts.length) {
+      return false;
+    }
+
+    for (let i = 0; i < patternParts.length; i++) {
+      if (patternParts[i] !== '+' && patternParts[i] !== topicParts[i]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

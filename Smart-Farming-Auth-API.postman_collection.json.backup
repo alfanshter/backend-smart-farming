@@ -1,0 +1,655 @@
+{
+  "info": {
+    "name": "Smart Farming - Authentication API",
+    "description": "Complete authentication API collection with JWT, Role-Based Access Control, and security features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "1. Register New User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.tokens.accessToken);",
+                  "    pm.environment.set('refreshToken', response.tokens.refreshToken);",
+                  "    pm.environment.set('userId', response.user.id);",
+                  "    pm.test('Register successful', () => {",
+                  "        pm.expect(response.user).to.have.property('email');",
+                  "        pm.expect(response.tokens).to.have.property('accessToken');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Register failed - check error', () => {",
+                  "        pm.expect(pm.response.code).to.equal(201);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"User123!\",\n  \"fullName\": \"Test User\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account.\n\n**Password Requirements:**\n- Minimum 8 characters\n- Must contain uppercase letter\n- Must contain lowercase letter\n- Must contain number or symbol\n\n**Roles:**\n- `admin` - Full access\n- `user` - Standard user (default)\n- `farmer` - Farmer access"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Login with Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.tokens.accessToken);",
+                  "    pm.environment.set('refreshToken', response.tokens.refreshToken);",
+                  "    pm.environment.set('userId', response.user.id);",
+                  "    pm.collectionVariables.set('accessToken', response.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.tokens.refreshToken);",
+                  "    pm.test('Login successful', () => {",
+                  "        pm.expect(response.user.role).to.equal('admin');",
+                  "        pm.expect(response.tokens.accessToken).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@smartfarming.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with default admin account.\n\n**Default Credentials:**\n- Email: admin@smartfarming.com\n- Password: Admin123!\n\n**Response includes:**\n- User information (id, email, fullName, role)\n- Access token (expires in 15 minutes)\n- Refresh token (expires in 7 days)"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Login with User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.tokens.accessToken);",
+                  "    pm.environment.set('refreshToken', response.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('accessToken', response.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.tokens.refreshToken);",
+                  "    pm.test('Login successful', () => {",
+                  "        pm.expect(response.tokens).to.have.property('accessToken');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"User123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with regular user account. Update email and password based on your registered user."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Login - Invalid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 Unauthorized', () => {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});",
+                  "",
+                  "pm.test('Should have error message', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid@example.com\",\n  \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test login with invalid credentials. Should return 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Get User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile contains user data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('userId');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "    pm.expect(response).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Get current user profile information.\n\n**Requires:** Access Token in Authorization header\n\n**Returns:**\n- userId\n- email\n- role"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get Profile - No Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 Unauthorized', () => {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Test accessing protected endpoint without token. Should return 401."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    pm.collectionVariables.set('accessToken', response.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+                  "    pm.test('Token refreshed successfully', () => {",
+                  "        pm.expect(response.accessToken).to.be.a('string');",
+                  "        pm.expect(response.refreshToken).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{refreshToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Get new access token using refresh token.\n\n**Requires:** Refresh Token in Authorization header\n\n**Returns:**\n- New accessToken\n- New refreshToken\n\n**Note:** Both tokens are rotated for security."
+          },
+          "response": []
+        },
+        {
+          "name": "8. Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Success message received', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('berhasil');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"Admin123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Change user password.\n\n**Requires:** Access Token\n\n**Password Requirements:**\n- Minimum 8 characters\n- Must contain uppercase letter\n- Must contain lowercase letter\n- Must contain number or symbol\n\n**Note:** All refresh tokens will be invalidated after password change."
+          },
+          "response": []
+        },
+        {
+          "name": "9. Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Logout successful', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('berhasil');",
+                  "});",
+                  "",
+                  "// Clear tokens after logout",
+                  "pm.environment.set('accessToken', '');",
+                  "pm.environment.set('refreshToken', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout user and invalidate refresh token.\n\n**Requires:** Access Token\n\n**Effect:** Refresh token will be removed from database, requiring new login."
+          },
+          "response": []
+        }
+      ],
+      "description": "Basic authentication endpoints including register, login, logout, and token management."
+    },
+    {
+      "name": "Role-Based Access",
+      "item": [
+        {
+          "name": "Admin Only Endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Admin access granted', () => {",
+                  "        const response = pm.response.json();",
+                  "        pm.expect(response.message).to.exist;",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Non-admin access denied (expected)', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin-only",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin-only"]
+            },
+            "description": "Example endpoint that requires ADMIN role.\n\n**Requires:**\n- Access Token\n- Role: admin\n\n**Returns:**\n- 200 OK if user is admin\n- 403 Forbidden if user is not admin"
+          },
+          "response": []
+        }
+      ],
+      "description": "Examples of role-based access control endpoints."
+    },
+    {
+      "name": "Validation Tests",
+      "item": [
+        {
+          "name": "Register - Weak Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 Bad Request', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "",
+                  "pm.test('Should have validation error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"weak\",\n  \"fullName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test registration with weak password. Should return 400 with validation errors."
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 Bad Request', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "",
+                  "pm.test('Should have email validation error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"ValidPass123!\",\n  \"fullName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test registration with invalid email format. Should return 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Missing Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 400 Bad Request', () => {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test registration with missing required fields. Should return 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Duplicate Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 409 Conflict', () => {",
+                  "    pm.expect(pm.response.code).to.equal(409);",
+                  "});",
+                  "",
+                  "pm.test('Should have conflict message', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('sudah terdaftar');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@smartfarming.com\",\n  \"password\": \"ValidPass123!\",\n  \"fullName\": \"Duplicate User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test registration with existing email. Should return 409 Conflict."
+          },
+          "response": []
+        }
+      ],
+      "description": "Tests for input validation and error handling."
+    }
+  ]
+}

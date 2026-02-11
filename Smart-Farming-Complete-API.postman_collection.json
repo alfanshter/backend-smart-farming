@@ -1,0 +1,2367 @@
+{
+  "info": {
+    "name": "Smart Farming - Complete API",
+    "description": "Complete API Collection for Smart Farming Backend\n\n### Authentication System\nThis collection includes comprehensive JWT-based authentication with role-based access control.\n\n### Roles:\n- **Admin**: Full access to all endpoints\n- **Farmer**: Can manage devices and watering operations\n- **User**: Read-only access\n\n### Quick Start:\n1. Use \"Register User\" or \"Login Admin\" to get access token\n2. Access token is automatically saved to environment\n3. All protected endpoints use {{accessToken}} automatically\n\n### Default Admin Account:\n- Email: admin@smartfarming.com\n- Password: Admin123!\n\n### Token Management:\n- Access Token: Valid for **7 days** - User tetap login selama 1 minggu!\n- Refresh Token: Valid for **30 days** - Bisa refresh token selama 1 bulan\n- Tidak akan tiba-tiba logout lagi 😊",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save access and refresh tokens",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    ",
+                  "    pm.test('Registration successful', () => {",
+                  "        pm.expect(response).to.have.property('accessToken');",
+                  "        pm.expect(response).to.have.property('refreshToken');",
+                  "        pm.expect(response.user).to.have.property('email');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Registration failed', () => {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"farmer@smartfarming.com\",\n  \"password\": \"Farmer123!\",\n  \"fullName\": \"John Farmer\",\n  \"role\": \"farmer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user. Password must be at least 8 characters with uppercase, lowercase, number, and special character."
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save tokens on successful login",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    ",
+                  "    pm.test('Login successful', () => {",
+                  "        pm.expect(response).to.have.property('accessToken');",
+                  "        pm.expect(response).to.have.property('refreshToken');",
+                  "        pm.expect(response.user.role).to.equal('admin');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@smartfarming.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with admin credentials to get full access"
+          },
+          "response": []
+        },
+        {
+          "name": "Login Farmer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    ",
+                  "    pm.test('Farmer login successful', () => {",
+                  "        pm.expect(response.user.role).to.equal('farmer');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"farmer@smartfarming.com\",\n  \"password\": \"Farmer123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with farmer credentials (register farmer first)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "    pm.expect(response).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Get current user profile (requires authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Password changed successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('Password changed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"Admin123!\",\n  \"newPassword\": \"NewAdmin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Change current user's password"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    ",
+                  "    pm.test('Token refreshed', () => {",
+                  "        pm.expect(response).to.have.property('accessToken');",
+                  "        pm.expect(response).to.have.property('refreshToken');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{refreshToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Get new access token using refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logout successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Clear tokens",
+                  "pm.environment.unset('accessToken');",
+                  "pm.environment.unset('refreshToken');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate refresh token"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints for registration, login, and token management"
+    },
+    {
+      "name": "Devices API",
+      "item": [
+        {
+          "name": "Create Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('lastDeviceId', response.id);",
+                  "    ",
+                  "    pm.test('Device created successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('name');",
+                  "        pm.expect(response).to.have.property('type');",
+                  "        pm.expect(response.isActive).to.be.a('boolean');",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Access denied - Admin or Farmer role required', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Water Pump #1\",\n  \"type\": \"pump\",\n  \"location\": \"Greenhouse A\",\n  \"mqttTopic\": \"smartfarm/pump/001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            },
+            "description": "Create a new device\n\n**Required Role:** Admin or Farmer\n\n**Device Types:**\n- pump: Water pump\n- sensor: Soil moisture sensor\n- valve: Water valve\n- controller: Main controller unit"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Devices",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Devices retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            },
+            "description": "Get list of all devices\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Device by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Device retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{lastDeviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{lastDeviceId}}"]
+            },
+            "description": "Get device details by ID\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Activate Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Device activated', () => {",
+                  "        pm.expect(response.isActive).to.be.true;",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Access denied - Admin or Farmer role required', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{lastDeviceId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{lastDeviceId}}", "activate"]
+            },
+            "description": "Activate a device\n\n**Required Role:** Admin or Farmer"
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Device deactivated', () => {",
+                  "        pm.expect(response.isActive).to.be.false;",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Access denied - Admin or Farmer role required', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{lastDeviceId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{lastDeviceId}}", "deactivate"]
+            },
+            "description": "Deactivate a device\n\n**Required Role:** Admin or Farmer"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Device deleted successfully', () => {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    pm.environment.unset('lastDeviceId');",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Access denied - Admin role required', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{lastDeviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{lastDeviceId}}"]
+            },
+            "description": "Delete a device\n\n**Required Role:** Admin only\n\n⚠️ **Warning:** This action cannot be undone"
+          },
+          "response": []
+        }
+      ],
+      "description": "Device management endpoints\n\n### Access Control:\n- **Create/Update Device:** Admin or Farmer\n- **Delete Device:** Admin only\n- **View Devices:** Any authenticated user"
+    },
+    {
+      "name": "Watering API",
+      "item": [
+        {
+          "name": "Control Watering",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Watering control successful', () => {",
+                  "        const response = pm.response.json();",
+                  "        pm.expect(response).to.have.property('success');",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Access denied - Admin or Farmer role required', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"{{lastDeviceId}}\",\n  \"action\": \"start\",\n  \"duration\": 300\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/watering/control",
+              "host": ["{{baseUrl}}"],
+              "path": ["watering", "control"]
+            },
+            "description": "Control watering device (start/stop)\n\n**Required Role:** Admin or Farmer\n\n**Actions:**\n- `start`: Start watering\n- `stop`: Stop watering\n\n**Duration:** Time in seconds (only for start action)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sensor Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Sensor data retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/watering/sensor/{{lastDeviceId}}?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["watering", "sensor", "{{lastDeviceId}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of records to retrieve"
+                }
+              ]
+            },
+            "description": "Get sensor data history for a device\n\n**Required:** Authentication (any role)\n\n**Query Parameters:**\n- `limit`: Number of records (default: 100)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('lastScheduleId', response.id);",
+                  "    ",
+                  "    pm.test('Schedule created successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('deviceId');",
+                  "        pm.expect(response).to.have.property('cronExpression');",
+                  "    });",
+                  "} else if (pm.response.code === 403) {",
+                  "    pm.test('Access denied - Admin or Farmer role required', () => {",
+                  "        pm.expect(pm.response.code).to.equal(403);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceId\": \"{{lastDeviceId}}\",\n  \"cronExpression\": \"0 6,18 * * *\",\n  \"duration\": 300,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/watering/schedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["watering", "schedule"]
+            },
+            "description": "Create watering schedule\n\n**Required Role:** Admin or Farmer\n\n**Cron Expression Examples:**\n- `0 6,18 * * *`: Every day at 6 AM and 6 PM\n- `0 */4 * * *`: Every 4 hours\n- `0 8 * * 1,3,5`: Monday, Wednesday, Friday at 8 AM\n\n**Duration:** Watering duration in seconds"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Schedules",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Schedules retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/watering/schedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["watering", "schedule"]
+            },
+            "description": "Get all watering schedules\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Schedule by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Schedule retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('cronExpression');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/watering/schedule/{{lastScheduleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["watering", "schedule", "{{lastScheduleId}}"]
+            },
+            "description": "Get schedule details by ID\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Watering control and scheduling endpoints\n\n### Access Control:\n- **Control Watering:** Admin or Farmer\n- **Create Schedule:** Admin or Farmer\n- **View Data/Schedules:** Any authenticated user\n\n### Features:\n- Real-time watering control\n- Sensor data monitoring\n- Automated scheduling with cron"
+    },
+    {
+      "name": "Zone Management",
+      "item": [
+        {
+          "name": "Create Zone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('lastZoneId', response.id);",
+                  "    ",
+                  "    pm.test('Zone created successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('name');",
+                  "        pm.expect(response).to.have.property('deviceId');",
+                  "        pm.expect(response.durationMinutes).to.equal(8);",
+                  "        pm.expect(response.durationSeconds).to.equal(20);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Zona A - Test\",\n  \"description\": \"Test zone untuk kontrol penyiraman manual\",\n  \"deviceId\": \"{{lastDeviceId}}\",\n  \"durationMinutes\": 8,\n  \"durationSeconds\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones"]
+            },
+            "description": "Create new zone untuk kontrol penyiraman manual\n\n**Required Role:** Admin or Farmer\n\n**Duration:** Waktu penyiraman otomatis (menit + detik)\n**Device ID:** ID device ESP32 yang akan dikontrol"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Zones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Zones retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones"]
+            },
+            "description": "Get all zones in system\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Zones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('My zones retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "my"]
+            },
+            "description": "Get zones created by current user\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Zones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Active zones retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    response.forEach(zone => {",
+                  "        pm.expect(zone.isActive).to.be.true;",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "active"]
+            },
+            "description": "Get all currently active zones (sedang menyiram)\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zone by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Zone retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('durationMinutes');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones/{{lastZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "{{lastZoneId}}"]
+            },
+            "description": "Get zone details by ID\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zone Status (Real-time)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Zone status retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('zoneId');",
+                  "    pm.expect(response).to.have.property('isActive');",
+                  "    pm.expect(response).to.have.property('remainingSeconds');",
+                  "    ",
+                  "    if (response.isActive) {",
+                  "        pm.expect(response.remainingSeconds).to.be.greaterThan(0);",
+                  "        console.log(`⏱️  Countdown: ${Math.floor(response.remainingSeconds / 60)}m ${response.remainingSeconds % 60}s`);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones/{{lastZoneId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "{{lastZoneId}}", "status"]
+            },
+            "description": "Get real-time zone status dengan countdown timer\n\n**Required:** Authentication (any role)\n\n**Usage:** Poll endpoint ini setiap 1 detik untuk update countdown di frontend\n\n**Response:**\n- `isActive`: Status penyiraman (true = sedang menyiram)\n- `remainingSeconds`: Sisa waktu countdown dalam detik\n- `percentComplete`: Progress bar (0-100%)"
+          },
+          "response": []
+        },
+        {
+          "name": "Control Zone (Start/Stop)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Zone control successful', () => {",
+                  "        pm.expect(response).to.have.property('zoneId');",
+                  "        pm.expect(response).to.have.property('isActive');",
+                  "        pm.expect(response).to.have.property('message');",
+                  "    });",
+                  "    ",
+                  "    if (response.isActive) {",
+                  "        console.log('✅ Watering STARTED');",
+                  "        console.log(`⏱️  Duration: ${response.durationMinutes}m ${response.durationSeconds}s`);",
+                  "    } else {",
+                  "        console.log('⛔ Watering STOPPED');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"{{lastZoneId}}\",\n  \"isActive\": true,\n  \"durationMinutes\": 8,\n  \"durationSeconds\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/zones/control",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "control"]
+            },
+            "description": "Start atau stop penyiraman zone\n\n**Required Role:** Admin or Farmer\n\n**Start Watering:**\n```json\n{\n  \"zoneId\": \"uuid\",\n  \"isActive\": true,\n  \"durationMinutes\": 8,\n  \"durationSeconds\": 20\n}\n```\n\n**Stop Watering:**\n```json\n{\n  \"zoneId\": \"uuid\",\n  \"isActive\": false\n}\n```\n\n**Features:**\n- Kirim MQTT command ke ESP32 (START_WATERING/STOP_WATERING)\n- Auto-stop setelah duration selesai\n- Countdown timer otomatis\n- Validasi device availability"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Zone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Zone updated successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('name');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Zona A - Updated\",\n  \"description\": \"Updated description\",\n  \"durationMinutes\": 10,\n  \"durationSeconds\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/zones/{{lastZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "{{lastZoneId}}"]
+            },
+            "description": "Update zone configuration\n\n**Required Role:** Admin or Farmer\n\n**Note:** Cannot update zone while watering is active"
+          },
+          "response": []
+        },
+        {
+          "name": "Emergency Stop All Zones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Emergency stop successful', () => {",
+                  "        pm.expect(response).to.have.property('message');",
+                  "        pm.expect(response).to.have.property('stoppedZones');",
+                  "        pm.expect(response.stoppedZones).to.be.an('array');",
+                  "    });",
+                  "    ",
+                  "    console.log(`🚨 Emergency Stop: ${response.stoppedZones.length} zones stopped`);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones/emergency-stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "emergency-stop"]
+            },
+            "description": "🚨 EMERGENCY STOP - Stop all active zones immediately\n\n**Required Role:** Admin or Farmer\n\n**Usage:** Untuk kondisi darurat, stop semua penyiraman aktif\n\n**Actions:**\n- Stop semua zone yang sedang aktif\n- Kirim STOP command ke semua device\n- Clear semua countdown timers\n- Return list zone yang di-stop"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Zone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Zone deleted successfully', () => {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "} else if (pm.response.code === 400) {",
+                  "    pm.test('Cannot delete active zone', () => {",
+                  "        pm.expect(pm.response.code).to.equal(400);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zones/{{lastZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["zones", "{{lastZoneId}}"]
+            },
+            "description": "Delete zone\n\n**Required Role:** Admin or Farmer\n\n**Note:** Cannot delete zone while watering is active"
+          },
+          "response": []
+        }
+      ],
+      "description": "Zone Management untuk kontrol penyiraman manual per zona\n\n### Access Control:\n- **Create/Update/Delete/Control:** Admin or Farmer\n- **View Zones/Status:** Any authenticated user\n\n### Features:\n- ⏱️ Countdown timer dengan auto-stop\n- 📡 MQTT integration (START/STOP commands)\n- 🔄 Real-time status polling\n- 🚨 Emergency stop all zones\n- ✅ Multi-zone support\n\n### Frontend Integration:\n```javascript\n// Poll status setiap 1 detik untuk countdown\nsetInterval(async () => {\n  const status = await fetch(`/zones/${zoneId}/status`);\n  updateCountdown(status.remainingSeconds);\n}, 1000);\n```\n\n### Workflow:\n1. Create zone dengan device ID dan duration\n2. Start watering via POST /zones/control\n3. Poll GET /zones/:id/status setiap 1 detik\n4. Zone auto-stop setelah duration selesai\n5. Atau manual stop via POST /zones/control"
+    },
+    {
+      "name": "Auto Drip Irrigation",
+      "item": [
+        {
+          "name": "Create Auto Drip Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('lastAutoDripId', response.id);",
+                  "    ",
+                  "    pm.test('Auto drip schedule created successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('zoneId');",
+                  "        pm.expect(response).to.have.property('timeSlots');",
+                  "        pm.expect(response).to.have.property('activeDays');",
+                  "        pm.expect(response.isActive).to.be.a('boolean');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"{{lastZoneId}}\",\n  \"isActive\": true,\n  \"timeSlots\": [\n    {\n      \"startTime\": \"07:00\",\n      \"durationMinutes\": 4,\n      \"durationSeconds\": 0\n    },\n    {\n      \"startTime\": \"17:00\",\n      \"durationMinutes\": 3,\n      \"durationSeconds\": 30\n    }\n  ],\n  \"activeDays\": [\"monday\", \"wednesday\", \"friday\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip"]
+            },
+            "description": "Create automatic drip irrigation schedule\n\n**Required Role:** Admin or Farmer\n\n**Time Format:** HH:MM (24-hour format)\n**Active Days:** monday, tuesday, wednesday, thursday, friday, saturday, sunday\n\n**Features:**\n- Multiple time slots per day\n- Custom duration for each slot\n- Activate specific days of week\n- Auto-trigger via cron scheduler"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Auto Drip Schedules",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Auto drip schedules retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip"]
+            },
+            "description": "Get all auto drip schedules\n\n**Required:** Authentication (any role)\n\n**Optional Query Params:**\n- userId: Filter by user ID\n- zoneId: Filter by zone ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Auto Drip Schedules",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Active auto drip schedules retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    response.forEach(schedule => {",
+                  "        pm.expect(schedule.isActive).to.be.true;",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip", "active"]
+            },
+            "description": "Get only active (enabled) auto drip schedules\n\n**Required:** Authentication (any role)\n\n**Note:** Cron scheduler only checks active schedules"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Auto Drip Schedule by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Auto drip schedule retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('timeSlots');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip/{{lastAutoDripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip", "{{lastAutoDripId}}"]
+            },
+            "description": "Get auto drip schedule details by ID\n\n**Required:** Authentication (any role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Auto Drip Schedules by Zone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Zone auto drip schedules retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip/zone/{{lastZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip", "zone", "{{lastZoneId}}"]
+            },
+            "description": "Get all auto drip schedules for specific zone\n\n**Required:** Authentication (any role)\n\n**Note:** One zone can only have one schedule"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Auto Drip Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Auto drip schedule updated successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('timeSlots');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true,\n  \"timeSlots\": [\n    {\n      \"startTime\": \"06:30\",\n      \"durationMinutes\": 5,\n      \"durationSeconds\": 0\n    },\n    {\n      \"startTime\": \"18:00\",\n      \"durationMinutes\": 4,\n      \"durationSeconds\": 0\n    }\n  ],\n  \"activeDays\": [\"tuesday\", \"thursday\", \"saturday\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip/{{lastAutoDripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip", "{{lastAutoDripId}}"]
+            },
+            "description": "Update auto drip schedule configuration\n\n**Required Role:** Admin or Farmer\n\n**Note:** All fields are optional (partial update)"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Auto Drip Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Auto drip schedule toggled successfully', () => {",
+                  "        pm.expect(response).to.have.property('id');",
+                  "        pm.expect(response).to.have.property('isActive');",
+                  "    });",
+                  "    ",
+                  "    if (response.isActive) {",
+                  "        console.log('✅ Auto drip ENABLED');",
+                  "    } else {",
+                  "        console.log('⛔ Auto drip DISABLED');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip/{{lastAutoDripId}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip", "{{lastAutoDripId}}", "toggle"]
+            },
+            "description": "Toggle auto drip schedule on/off\n\n**Required Role:** Admin or Farmer\n\n**Usage:** Quick enable/disable schedule tanpa update data lain"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Auto Drip Schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Auto drip schedule deleted successfully', () => {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    pm.environment.unset('lastAutoDripId');",
+                  "} else if (pm.response.code === 404) {",
+                  "    pm.test('Auto drip schedule not found', () => {",
+                  "        pm.expect(pm.response.code).to.equal(404);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auto-drip/{{lastAutoDripId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auto-drip", "{{lastAutoDripId}}"]
+            },
+            "description": "Delete auto drip schedule\n\n**Required Role:** Admin or Farmer\n\n⚠️ **Warning:** This action cannot be undone"
+          },
+          "response": []
+        }
+      ],
+      "description": "Auto Drip Irrigation - Automatic scheduling system\n\n### Access Control:\n- **Create/Update/Delete/Toggle:** Admin or Farmer\n- **View Schedules:** Any authenticated user\n\n### Features:\n- 🤖 Automatic cron-based scheduling (runs every minute)\n- ⏰ Multiple time slots per day\n- 📅 Specific days of week activation\n- ⚡ Quick toggle on/off\n- 🔄 Integration with Zone Control system\n- 📡 MQTT auto-trigger to ESP32 devices\n\n### Time Slot Format:\n```json\n{\n  \"startTime\": \"07:00\",\n  \"durationMinutes\": 4,\n  \"durationSeconds\": 30\n}\n```\n\n### Active Days:\n- monday, tuesday, wednesday, thursday, friday, saturday, sunday\n\n### How It Works:\n1. Cron scheduler checks all active schedules every minute\n2. If current day and time match a schedule:\n   - Auto-trigger watering via ZoneControlUseCase\n   - Send MQTT command to ESP32 device\n   - Start countdown timer\n   - Auto-stop after duration completes\n\n### Use Cases:\n- **Morning/Evening:** Multiple daily watering sessions\n- **Weekday Only:** Skip weekends\n- **Alternate Days:** Water every other day\n- **Custom Patterns:** Any combination of days and times\n\n### Monitoring:\n- Check backend logs for scheduler activity:\n  - \"⏰ Checking schedules at [time]\"\n  - \"✅ Schedule matched! Zone: ...\"\n  - \"💧 Triggering AUTO DRIP for zone ...\"\n\n### Notes:\n- One zone can only have one auto drip schedule\n- Schedule triggers are checked at :00 seconds of each minute\n- Inactive schedules are skipped by cron scheduler\n- Use toggle endpoint for quick enable/disable"
+    },
+    {
+      "name": "Tank Control (Tandon)",
+      "item": [
+        {
+          "name": "Create Tank",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('lastTankId', response.data.id);",
+                  "    ",
+                  "    pm.test('Tank created successfully', () => {",
+                  "        pm.expect(response).to.have.property('success', true);",
+                  "        pm.expect(response).to.have.property('message');",
+                  "        pm.expect(response).to.have.property('data');",
+                  "        pm.expect(response.data).to.have.property('id');",
+                  "        pm.expect(response.data).to.have.property('name');",
+                  "        pm.expect(response.data).to.have.property('capacity');",
+                  "        pm.expect(response.data).to.have.property('currentLevel');",
+                  "        pm.expect(response.data).to.have.property('agitatorStatus');",
+                  "        pm.expect(response.data.autoFillEnabled).to.be.a('boolean');",
+                  "        pm.expect(response.data.agitatorEnabled).to.be.a('boolean');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Water Tank\",\n  \"description\": \"Primary water storage tank with automatic level sensor\",\n  \"deviceId\": \"{{lastDeviceId}}\",\n  \"sensorDeviceId\": \"ESP32_SENSOR_001\",\n  \"capacity\": 5000,\n  \"currentLevel\": 75,\n  \"autoFillEnabled\": true,\n  \"autoFillMinLevel\": 30,\n  \"autoFillMaxLevel\": 90,\n  \"manualFillMaxLevel\": 95,\n  \"agitatorEnabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tanks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks"]
+            },
+            "description": "Create new tank/tandon configuration\n\n**Required Role:** Admin or Farmer\n\n**Parameters:**\n- `name`: Tank name (max 100 chars)\n- `deviceId`: ESP32 device ID for MQTT control (pompa, agitator) - **Required**\n- `sensorDeviceId`: ESP32 device ID for level sensor - **Optional**\n- `capacity`: Tank capacity in liters (10-100000)\n- `currentLevel`: Initial level (0-100%) - **Required**\n- `autoFillEnabled`: Enable automatic filling\n- `autoFillMinLevel`: Minimum level to start auto fill (0-80%, default 30%)\n- `autoFillMaxLevel`: Maximum level to stop auto fill (50-100%, default 90%)\n- `manualFillMaxLevel`: Max level for manual fill (50-100%, default 95%)\n- `manualFillDuration`: Duration in minutes (1-180) - **Optional**, required if no sensorDeviceId\n- `agitatorEnabled`: Enable pengaduk/agitator\n\n**Note:** For tanks without sensor, provide `manualFillDuration` instead of `sensorDeviceId`"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Tanks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tanks retrieved successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', true);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response).to.have.property('count');",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "    ",
+                  "    if (response.data.length > 0) {",
+                  "        const tank = response.data[0];",
+                  "        pm.expect(tank).to.have.property('id');",
+                  "        pm.expect(tank).to.have.property('name');",
+                  "        pm.expect(tank).to.have.property('agitatorStatus');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks"]
+            },
+            "description": "Get all tanks for current user\n\n**Required:** Authentication (any role)\n\n**Query Params:**\n- `all=true`: (Admin only) Get all tanks from all users"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tank (Manual - No Sensor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('lastManualTankId', response.data.id);",
+                  "    ",
+                  "    pm.test('Manual tank created successfully', () => {",
+                  "        pm.expect(response).to.have.property('success', true);",
+                  "        pm.expect(response).to.have.property('message');",
+                  "        pm.expect(response).to.have.property('data');",
+                  "        pm.expect(response.data).to.have.property('id');",
+                  "        pm.expect(response.data).to.have.property('name');",
+                  "        pm.expect(response.data).to.have.property('manualFillDuration');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Backup Water Tank\",\n  \"description\": \"Secondary tank without level sensor (manual control)\",\n  \"deviceId\": \"{{lastDeviceId}}\",\n  \"capacity\": 3000,\n  \"currentLevel\": 50,\n  \"autoFillEnabled\": false,\n  \"autoFillMinLevel\": 30,\n  \"autoFillMaxLevel\": 90,\n  \"manualFillMaxLevel\": 95,\n  \"manualFillDuration\": 30,\n  \"agitatorEnabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tanks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks"]
+            },
+            "description": "Create tank without automatic level sensor (time-based manual fill)\n\n**Required Role:** Admin or Farmer\n\n**Key Difference:**\n- No `sensorDeviceId` provided\n- Must provide `manualFillDuration` (1-180 minutes)\n- Manual fill will run for specified duration instead of waiting for sensor feedback\n\n**Use Case:** Tanks in remote locations or without sensor hardware"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tank Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tank status retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('currentLevel');",
+                  "    pm.expect(response).to.have.property('currentVolume');",
+                  "    pm.expect(response).to.have.property('agitator');",
+                  "    pm.expect(response).to.have.property('autoFill');",
+                  "    pm.expect(response).to.have.property('manualFill');",
+                  "    ",
+                  "    console.log(`📊 Tank: ${response.name}`);",
+                  "    console.log(`💧 Level: ${response.currentLevel}% (${response.currentVolume}L / ${response.capacity}L)`);",
+                  "    console.log(`🔄 Agitator: ${response.agitator.status ? 'ON' : 'OFF'}`);",
+                  "    console.log(`📈 Today Usage: ${response.todayUsage}L`);",
+                  "    console.log(`📉 Today Filled: ${response.todayFilled}L`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "status"]
+            },
+            "description": "Get real-time tank status\n\n**Required:** Authentication (any role)\n\n**Usage:** Poll this endpoint for real-time dashboard updates\n\n**Response includes:**\n- Current level & volume\n- Agitator status\n- Auto fill settings & status\n- Manual fill availability\n- Today's usage statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Turn ON Agitator (Pengaduk)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Agitator turned ON', () => {",
+                  "        pm.expect(response.agitatorStatus).to.be.true;",
+                  "    });",
+                  "    console.log('✅ Pengaduk AKTIF');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/agitator/on",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "agitator", "on"]
+            },
+            "description": "Turn ON agitator/pengaduk tandon\n\n**Required Role:** Admin or Farmer\n\n**MQTT Command:** AGITATOR_ON sent to ESP32\n\n**Use Case:** Aduk air di tandon untuk distribusi nutrisi merata"
+          },
+          "response": []
+        },
+        {
+          "name": "Turn OFF Agitator (Pengaduk)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Agitator turned OFF', () => {",
+                  "        pm.expect(response.agitatorStatus).to.be.false;",
+                  "    });",
+                  "    console.log('⛔ Pengaduk NONAKTIF');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/agitator/off",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "agitator", "off"]
+            },
+            "description": "Turn OFF agitator/pengaduk tandon\n\n**Required Role:** Admin or Farmer\n\n**MQTT Command:** AGITATOR_OFF sent to ESP32"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Manual Fill",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Manual fill started', () => {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    console.log('🚰 Pompa manual MULAI isi');",
+                  "} else if (pm.response.code === 400) {",
+                  "    pm.test('Tank already at max level', () => {",
+                  "        pm.expect(pm.response.code).to.equal(400);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"durationMinutes\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/manual-fill/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "manual-fill", "start"]
+            },
+            "description": "Start manual fill (pompa manual)\n\n**Required Role:** Admin or Farmer\n\n**2 Modes Available:**\n\n**1. With Duration (Time-based):**\n```json\n{\n  \"durationMinutes\": 5\n}\n```\n- Pompa nyala selama 5 menit\n- Otomatis mati setelah durasi selesai\n- Cocok untuk tank tanpa sensor level\n\n**2. Without Duration (Sensor-based or Manual Stop):**\n```json\n{}\n```\nOr send empty body\n- Menggunakan `manualFillDuration` dari tank settings (jika ada)\n- Atau pompa nyala terus sampai di-stop manual\n- Cocok untuk tank dengan sensor level\n\n**MQTT Command:** MANUAL_FILL_START with duration (in minutes)\n\n**Use Case:** Flexible filling - pilih pakai durasi atau manual stop"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Manual Fill",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Manual fill stopped', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "console.log('⛔ Pompa manual BERHENTI');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/manual-fill/stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "manual-fill", "stop"]
+            },
+            "description": "Stop manual fill\n\n**Required Role:** Admin or Farmer\n\n**MQTT Command:** MANUAL_FILL_STOP\n\n**Use Case:** Emergency stop or user decides to stop before max level"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tank Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Tank updated successfully', () => {",
+                  "        const response = pm.response.json();",
+                  "        pm.expect(response).to.have.property('id');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Water Tank - Updated\",\n  \"sensorDeviceId\": \"ESP32_SENSOR_002\",\n  \"autoFillEnabled\": true,\n  \"autoFillMinLevel\": 35,\n  \"autoFillMaxLevel\": 95,\n  \"manualFillMaxLevel\": 95,\n  \"manualFillDuration\": 45,\n  \"agitatorEnabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}"]
+            },
+            "description": "Update tank configuration\n\n**Required Role:** Admin or Farmer\n\n**All fields are optional** (partial update)\n\n**Updatable Fields:**\n- `name`: Tank name\n- `description`: Tank description\n- `sensorDeviceId`: Level sensor device ID\n- `capacity`: Tank capacity\n- `autoFillEnabled`: Enable/disable auto fill\n- `autoFillMinLevel`: Min level for auto fill (0-80%)\n- `autoFillMaxLevel`: Max level for auto fill (50-100%)\n- `manualFillMaxLevel`: Max level for manual fill (50-100%)\n- `manualFillDuration`: Duration for manual fill (1-180 min)\n- `agitatorEnabled`: Enable/disable agitator\n\n**Validation:** autoFillMinLevel must be less than autoFillMaxLevel"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Today Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statistics retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('today');",
+                  "    ",
+                  "    console.log('📊 STATISTIK HARI INI:');",
+                  "    console.log(`💧 Level: ${response.currentLevel}% (${response.currentVolume}L / ${response.capacity}L)`);",
+                  "    console.log(`📉 Penggunaan: ${response.today.totalUsage}L`);",
+                  "    console.log(`📈 Pengisian: ${response.today.totalFilled}L`);",
+                  "    console.log(`🤖 Auto Fill: ${response.today.autoFillCount}x`);",
+                  "    console.log(`👤 Manual Fill: ${response.today.manualFillCount}x`);",
+                  "    console.log(`📊 Min/Max Level: ${response.today.minLevel}% / ${response.today.maxLevel}%`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/statistics/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "statistics", "today"]
+            },
+            "description": "Get today's water usage statistics\n\n**Required:** Authentication (any role)\n\n**Metrics:**\n- Total water usage (liters)\n- Total water filled (liters)\n- Auto fill count\n- Manual fill count\n- Min/Max/Average level\n\n**Use Case:** Dashboard daily summary"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Statistics (Date Range)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statistics retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('statistics');",
+                  "    pm.expect(response.statistics).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/statistics?startDate=2026-02-01&endDate=2026-02-10",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "statistics"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-02-01",
+                  "description": "Start date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-02-10",
+                  "description": "End date (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Get statistics for date range\n\n**Required:** Authentication (any role)\n\n**Query Parameters:**\n- `startDate`: Start date (YYYY-MM-DD)\n- `endDate`: End date (YYYY-MM-DD)\n\n**Use Case:** Historical data for charts and reports"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logs retrieved', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}/logs?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of logs to retrieve (default: 50)"
+                }
+              ]
+            },
+            "description": "Get recent activity logs\n\n**Required:** Authentication (any role)\n\n**Log Types:**\n- auto_fill_start / auto_fill_stop\n- manual_fill_start / manual_fill_stop\n- agitator_on / agitator_off\n- level_update\n- overflow_warning\n\n**Use Case:** Activity timeline, debugging, audit trail"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tank",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Tank deleted successfully', () => {",
+                  "        pm.response.to.have.status(200);",
+                  "    });",
+                  "    pm.environment.unset('lastTankId');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tanks/{{lastTankId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tanks", "{{lastTankId}}"]
+            },
+            "description": "Delete tank (soft delete)\n\n**Required Role:** Admin or Farmer\n\n⚠️ **Warning:** This will also delete all related statistics and logs"
+          },
+          "response": []
+        }
+      ],
+      "description": "Tank/Tandon Control System - Complete water tank management\n\n### Access Control:\n- **Create/Update/Delete/Control:** Admin or Farmer\n- **View Status/Statistics:** Any authenticated user\n\n### Features:\n\n#### 🔄 Pengaduk Tandon (Agitator)\n- ON/OFF control via MQTT\n- Status tracking\n- Use case: Mix nutrients evenly\n\n#### 🚰 Pompa Manual (Manual Fill)\n- User-controlled filling\n- Configurable max level limit (e.g., 89%)\n- Auto-stop at max level\n- Emergency stop button\n- Fill count tracking\n\n#### 🤖 Pengisian Otomatis (Auto Fill)\n- Automatic trigger when level < minLevel\n- Auto-stop when level >= maxLevel\n- Cron-based monitoring (every minute)\n- Configurable thresholds (e.g., 60% → 90%)\n- Fill count tracking\n\n#### 📊 Statistik Penggunaan Air\n- **Daily metrics:**\n  - Total water usage (liters)\n  - Total water filled (liters)\n  - Min/Max/Average level\n  - Auto fill count\n  - Manual fill count\n- **Historical data:**\n  - Date range queries\n  - Trend analysis\n  - Export-ready format\n\n### Frontend Integration:\n\n**Real-time Dashboard:**\n```javascript\n// Poll status every 3 seconds\nsetInterval(async () => {\n  const status = await fetch(`/tanks/${tankId}/status`);\n  updateDashboard(status);\n}, 3000);\n```\n\n**Display Elements:**\n- Current level (percentage + liters)\n- Capacity visualization (progress bar)\n- Agitator status indicator\n- Auto fill status & thresholds\n- Manual fill button (disabled if at max)\n- Today's usage statistics\n\n### MQTT Commands:\n\nBackend sends to ESP32:\n- `AGITATOR_ON` / `AGITATOR_OFF`\n- `MANUAL_FILL_START` (with maxLevel)\n- `MANUAL_FILL_STOP`\n- `AUTO_FILL_START` (with minLevel, maxLevel)\n- `AUTO_FILL_STOP`\n\nESP32 sends to backend:\n- `LEVEL_UPDATE` (current level %)\n- `FILL_COMPLETE` (when auto-stop triggered)\n- `OVERFLOW_WARNING` (level > 95%)\n\n### Database Schema:\n\n**tanks:**\n- Configuration & settings\n- Current status (level, agitator)\n- Auto fill thresholds\n- Manual fill max level\n\n**tank_statistics:**\n- Daily aggregated data\n- Usage & fill metrics\n- Level statistics\n- Fill counts\n\n**tank_logs:**\n- Activity timeline\n- All control events\n- Level changes\n- Warnings/alerts\n\n### Use Cases:\n\n1. **Manual Control:**\n   - User wants to fill tank manually\n   - Start fill → auto-stop at 89%\n   - Or manual stop anytime\n\n2. **Automatic Refill:**\n   - Level drops to 60%\n   - Auto fill starts\n   - Stops at 90%\n   - No user intervention needed\n\n3. **Nutrient Mixing:**\n   - Add nutrients to tank\n   - Turn on agitator\n   - Mix for 5 minutes\n   - Turn off agitator\n\n4. **Water Usage Monitoring:**\n   - View today's usage\n   - Check historical trends\n   - Identify leaks or excessive use\n   - Plan irrigation schedules\n\n### Notes:\n- Auto fill runs via cron scheduler (same as auto drip)\n- Level updates should come from ESP32 sensor\n- Statistics are automatically aggregated daily\n- Overflow warning at 95% level\n- All actions are logged for audit trail"
+    },
+    {
+      "name": "Role-Based Access Tests",
+      "item": [
+        {
+          "name": "Test Admin Access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Admin has access to profile', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.role).to.equal('admin');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            },
+            "description": "Test that admin role has proper access"
+          },
+          "response": []
+        },
+        {
+          "name": "Test User Cannot Delete Device",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// First login as user role",
+                  "pm.sendRequest({",
+                  "    url: pm.environment.get('baseUrl') + '/auth/register',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: {",
+                  "        mode: 'raw',",
+                  "        raw: JSON.stringify({",
+                  "            email: 'testuser@smartfarming.com',",
+                  "            password: 'User123!',",
+                  "            fullName: 'Test User',",
+                  "            role: 'user'",
+                  "        })",
+                  "    }",
+                  "}, (err, res) => {",
+                  "    if (!err && res.code === 201) {",
+                  "        pm.environment.set('userAccessToken', res.json().accessToken);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User role cannot delete device', () => {",
+                  "    pm.expect(pm.response.code).to.equal(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices/test-device-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "test-device-id"]
+            },
+            "description": "Verify that user role is denied from deleting devices"
+          },
+          "response": []
+        }
+      ],
+      "description": "Tests to verify role-based access control is working correctly"
+    },
+    {
+      "name": "Flushing System",
+      "item": [
+        {
+          "name": "Start Flushing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    ",
+                  "    pm.test('Flushing started successfully', () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('id');",
+                  "        pm.expect(response.data.status).to.equal('running');",
+                  "    });",
+                  "    ",
+                  "    pm.environment.set('lastFlushingSessionId', response.data.id);",
+                  "    ",
+                  "    console.log('🚰 Flushing started for ' + response.data.durationMinutes + ' minutes');",
+                  "} else if (pm.response.code === 400) {",
+                  "    pm.test('Flushing already running', () => {",
+                  "        pm.expect(pm.response.code).to.equal(400);",
+                  "    });",
+                  "    console.log('⚠️ Flushing already active - stop first');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"durationMinutes\": 15,\n  \"notes\": \"Pembilasan rutin mingguan\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/flushing/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["flushing", "start"]
+            },
+            "description": "Start flushing untuk membersihkan pipa\n\n**Required Role:** Admin or Farmer\n\n**Body:** `durationMinutes` (1-180), `notes` (optional)"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Flushing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Flushing stopped', () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('⛔ Flushing stopped');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Dihentikan manual\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/flushing/stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["flushing", "stop"]
+            },
+            "description": "Stop flushing manual"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test('Request successful', () => {",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "if (response.data) {",
+                  "    console.log('🚰 Flushing ACTIVE - ' + response.data.durationMinutes + ' min');",
+                  "} else {",
+                  "    console.log('✅ No active session');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/flushing/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["flushing", "current"]
+            },
+            "description": "Check current running session"
+          },
+          "response": []
+        },
+        {
+          "name": "Get History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test('Has history', () => {",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "});",
+                  "console.log('📜 History count: ' + response.count);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/flushing/history?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["flushing", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get flushing history"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.test('Has statistics', () => {",
+                  "    pm.expect(response.data).to.have.property('totalSessions');",
+                  "    pm.expect(response.data).to.have.property('completedSessions');",
+                  "});",
+                  "console.log('📊 Total: ' + response.data.totalSessions);",
+                  "console.log('✅ Completed: ' + response.data.completedSessions);",
+                  "console.log('⏱ Duration: ' + response.data.totalDurationMinutes + ' min');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/flushing/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["flushing", "statistics"]
+            },
+            "description": "Get statistics for dashboard"
+          },
+          "response": []
+        }
+      ],
+      "description": "Flushing System - Pembilasan Pipa Irigasi\n\n**Endpoints:**\n- POST /flushing/start - Mulai flushing\n- POST /flushing/stop - Stop flushing\n- GET /flushing/current - Session aktif\n- GET /flushing/history - Riwayat\n- GET /flushing/statistics - Statistik"
+    },
+    {
+      "name": "Validation Tests",
+      "item": [
+        {
+          "name": "Register - Weak Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Weak password rejected', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"weak\",\n  \"fullName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test that weak passwords are rejected"
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid email rejected', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"Strong123!\",\n  \"fullName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test that invalid email format is rejected"
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Wrong Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Wrong password rejected', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@smartfarming.com\",\n  \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test that wrong password is rejected"
+          },
+          "response": []
+        },
+        {
+          "name": "Access Protected Route Without Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unauthorized access rejected', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            },
+            "description": "Test that protected routes require authentication"
+          },
+          "response": []
+        }
+      ],
+      "description": "Validation tests to ensure security rules are enforced"
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastDeviceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastScheduleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastZoneId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastAutoDripId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastTankId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastFlushingSessionId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

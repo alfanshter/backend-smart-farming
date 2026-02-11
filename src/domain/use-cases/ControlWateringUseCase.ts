@@ -14,7 +14,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { DeviceStatus } from '../entities/Device';
-import { InMemoryDeviceRepository } from '../../infrastructure/repositories/InMemoryDeviceRepository';
+import { TimescaleDeviceRepository } from '../../infrastructure/repositories/TimescaleDeviceRepository';
 import { MqttClient } from '../../infrastructure/mqtt/MqttClient';
 
 export interface ControlWateringCommand {
@@ -26,7 +26,7 @@ export interface ControlWateringCommand {
 @Injectable()
 export class ControlWateringUseCase {
   constructor(
-    private readonly deviceRepository: InMemoryDeviceRepository,
+    private readonly deviceRepository: TimescaleDeviceRepository,
     private readonly mqttClient: MqttClient,
   ) {}
 

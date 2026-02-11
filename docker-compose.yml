@@ -1,0 +1,95 @@
+services:
+  # TimescaleDB - PostgreSQL extension untuk time-series data
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: smartfarming-timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: smartfarming
+      POSTGRES_USER: smartfarming
+      POSTGRES_PASSWORD: smartfarming123
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    restart: unless-stopped
+    networks:
+      - smartfarming-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartfarming"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend NestJS Application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartfarming-backend
+    ports:
+      - "3001:3001"
+    environment:
+      # Database
+      DATABASE_HOST: timescaledb
+      DATABASE_PORT: 5432
+      DATABASE_USER: smartfarming
+      DATABASE_PASSWORD: smartfarming123
+      DATABASE_NAME: smartfarming
+      
+      # Also set DB_ prefix for wait script
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_USERNAME: smartfarming
+      DB_PASSWORD: smartfarming123
+      DB_NAME: smartfarming
+      
+      # JWT
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
+      JWT_REFRESH_EXPIRES_IN: 7d
+      
+      # MQTT (HiveMQ Cloud)
+      MQTT_BROKER_URL: mqtts://6da97578cebb460eab0c5e7cff55862d.s1.eu.hivemq.cloud:8883
+      MQTT_USERNAME: smartfarming
+      MQTT_PASSWORD: Smartfarming123
+      
+      # App
+      NODE_ENV: production
+      PORT: 3001
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - smartfarming-network
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  # pgAdmin4 - Database GUI
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: smartfarming-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@smartfarming.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+    networks:
+      - smartfarming-network
+    depends_on:
+      - timescaledb
+
+volumes:
+  timescaledb_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  smartfarming-network:
+    driver: bridge

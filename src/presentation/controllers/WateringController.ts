@@ -5,15 +5,28 @@
  * Controller untuk kontrol penyiraman dan jadwal.
  */
 
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
 import { ControlWateringUseCase } from '../../domain/use-cases/ControlWateringUseCase';
 import { GetSensorDataUseCase } from '../../domain/use-cases/GetSensorDataUseCase';
 import { ControlWateringDto } from '../../application/dtos/ControlWateringDto';
 import { CreateScheduleDto } from '../../application/dtos/CreateScheduleDto';
 import { WateringSchedule } from '../../domain/entities/WateringSchedule';
 import { InMemoryWateringScheduleRepository } from '../../infrastructure/repositories/InMemoryWateringScheduleRepository';
+import { JwtAuthGuard } from '../../infrastructure/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../infrastructure/auth/guards/roles.guard';
+import { Roles } from '../../infrastructure/auth/decorators/roles.decorator';
+import { UserRole } from '../../domain/entities/User';
 
 @Controller('watering')
+@UseGuards(JwtAuthGuard)
 export class WateringController {
   constructor(
     private readonly controlWateringUseCase: ControlWateringUseCase,
@@ -22,6 +35,8 @@ export class WateringController {
   ) {}
 
   @Post('control')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.FARMER)
   async controlWatering(@Body() dto: ControlWateringDto) {
     return await this.controlWateringUseCase.execute({
       deviceId: dto.deviceId,
@@ -42,6 +57,8 @@ export class WateringController {
   }
 
   @Post('schedule')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.FARMER)
   async createSchedule(@Body() dto: CreateScheduleDto) {
     const schedule = new WateringSchedule(
       crypto.randomUUID(),
@@ -67,6 +84,10 @@ export class WateringController {
 
   @Get('schedule/:id')
   async getScheduleById(@Param('id') id: string) {
-    return await this.scheduleRepository.findById(id);
+    const schedule = await this.scheduleRepository.findById(id);
+    if (!schedule) {
+      throw new NotFoundException(`Schedule with ID ${id} not found`);
+    }
+    return schedule;
   }
 }
