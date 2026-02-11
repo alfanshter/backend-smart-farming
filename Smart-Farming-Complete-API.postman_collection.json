@@ -2157,6 +2157,263 @@
       "description": "Flushing System - Pembilasan Pipa Irigasi\n\n**Endpoints:**\n- POST /flushing/start - Mulai flushing\n- POST /flushing/stop - Stop flushing\n- GET /flushing/current - Session aktif\n- GET /flushing/history - Riwayat\n- GET /flushing/statistics - Statistik"
     },
     {
+      "name": "Garden Watering System",
+      "item": [
+        {
+          "name": "Start Garden Watering",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Start garden watering successful', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.have.property('id');",
+                  "    pm.expect(response.data.status).to.equal('running');",
+                  "    ",
+                  "    // Save session ID for other requests",
+                  "    pm.environment.set('lastGardenWateringSessionId', response.data.id);",
+                  "    console.log('Garden watering session ID:', response.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"durationMinutes\": 30,\n  \"notes\": \"Penyiraman kebun area depan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/garden-watering/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["garden-watering", "start"]
+            },
+            "description": "Start new garden watering session\n\n**Duration:** 1-180 minutes\n**Notes:** Optional description"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Garden Watering",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Stop garden watering successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data.status).to.equal('stopped');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Penyiraman dihentikan lebih awal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/garden-watering/stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["garden-watering", "stop"]
+            },
+            "description": "Stop current running garden watering session"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Garden Watering Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get current session successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    ",
+                  "    if (response.data) {",
+                  "        console.log('Garden watering status:', response.data.status);",
+                  "        console.log('Started at:', response.data.startedAt);",
+                  "    } else {",
+                  "        console.log('No active garden watering session');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/garden-watering/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["garden-watering", "current"]
+            },
+            "description": "Get currently running garden watering session"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Garden Watering History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get history successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "    pm.expect(response).to.have.property('count');",
+                  "    ",
+                  "    console.log('Total sessions:', response.count);",
+                  "    response.data.forEach(session => {",
+                  "        console.log(`- ${session.status}: ${session.totalDurationMinutes || session.durationMinutes} min`);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/garden-watering/history?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["garden-watering", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of records to return (default: 10)"
+                }
+              ]
+            },
+            "description": "Get garden watering history with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Garden Watering Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get statistics successful', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data).to.have.property('totalSessions');",
+                  "    pm.expect(response.data).to.have.property('completedSessions');",
+                  "    pm.expect(response.data).to.have.property('totalDurationMinutes');",
+                  "    ",
+                  "    console.log('📊 Garden Watering Statistics:');",
+                  "    console.log('Total Sessions:', response.data.totalSessions);",
+                  "    console.log('Completed:', response.data.completedSessions);",
+                  "    console.log('Stopped:', response.data.stoppedSessions);",
+                  "    console.log('Total Duration:', response.data.totalDurationMinutes, 'minutes');",
+                  "    console.log('Average Duration:', response.data.averageDurationMinutes.toFixed(2), 'minutes');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/garden-watering/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["garden-watering", "statistics"]
+            },
+            "description": "Get statistics for dashboard"
+          },
+          "response": []
+        }
+      ],
+      "description": "Garden Watering System - Penyiraman Kebun\n\n**Endpoints:**\n- POST /garden-watering/start - Mulai penyiraman kebun\n- POST /garden-watering/stop - Stop penyiraman\n- GET /garden-watering/current - Session aktif\n- GET /garden-watering/history - Riwayat\n- GET /garden-watering/statistics - Statistik"
+    },
+    {
       "name": "Validation Tests",
       "item": [
         {
@@ -2170,6 +2427,45 @@
                   "    pm.response.to.have.status(400);",
                   "    const response = pm.response.json();",
                   "    pm.expect(response.message).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"weak\",\n  \"fullName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test that weak passwords are rejected"
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid email rejected', () => {",
+                  "    pm.response.to.have.status(400);",
                   "});"
                 ],
                 "type": "text/javascript"

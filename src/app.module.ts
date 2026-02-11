@@ -8,6 +8,7 @@ import { ZoneModule } from './modules/ZoneModule';
 import { AutoDripModule } from './modules/AutoDripModule';
 import { TankModule } from './modules/TankModule';
 import { FlushingModule } from './modules/FlushingModule';
+import { GardenWateringModule } from './modules/GardenWateringModule';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { FlushingModule } from './modules/FlushingModule';
     AutoDripModule,
     TankModule,
     FlushingModule,
+    GardenWateringModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -36,6 +36,19 @@ interface TankEventPayload {
   duration?: number; // Duration in minutes
 }
 
+interface ZoneStatusPayload {
+  zoneId: string;
+  type: 'ACK' | 'STATUS' | 'ERROR';
+  command?: string; // START_MANUAL, STOP_MANUAL
+  received?: boolean;
+  status?: 'WATERING_STARTED' | 'WATERING_STOPPED';
+  pumpStatus?: 'ON' | 'OFF';
+  solenoidStatus?: 'OPEN' | 'CLOSED';
+  totalDuration?: number;
+  error?: string;
+  timestamp: string;
+}
+
 @Injectable()
 export class MqttService implements OnModuleInit {
   constructor(
@@ -81,6 +94,13 @@ export class MqttService implements OnModuleInit {
         void this.handleTankEvent(message);
       });
       console.log('✅ Subscribed to: smartfarm/tank/+/event');
+
+      // Subscribe ke topic zone status (feedback dari ESP32)
+      await this.mqttClient.subscribe('smartfarm/zone/+/status', (message) => {
+        console.log('📡 Zone status message received');
+        void this.handleZoneStatus(message);
+      });
+      console.log('✅ Subscribed to: smartfarm/zone/+/status');
 
       console.log('🎧 MQTT Service listening for messages...');
     } catch (error) {
@@ -190,15 +210,143 @@ export class MqttService implements OnModuleInit {
           // Real-time level update dari sensor
           if (data.level !== undefined) {
             await this.tankControlUseCase.updateLevel(data.tankId, data.level);
-            console.log(`📊 Tank ${data.tankId} level updated to ${data.level}%`);
+            console.log(
+              `📊 Tank ${data.tankId} level updated to ${data.level}%`,
+            );
           }
           break;
 
         default:
-          console.warn(`⚠️  Unknown tank event: ${data.event}`);
+          console.warn('⚠️  Unknown tank event:', data.event);
       }
     } catch (error) {
       console.error('❌ Error processing tank event:', error);
     }
+  }
+
+  /**
+   * Handle zone status callback dari ESP32
+   * Menerima ACK, STATUS, dan ERROR events
+   */
+  private handleZoneStatus(message: string): void {
+    try {
+      console.log('🔍 Processing zone status message:', message);
+
+      const data = JSON.parse(message) as ZoneStatusPayload;
+
+      // Validasi payload
+      if (!data.zoneId || !data.type) {
+        console.error('❌ Invalid zone status payload:', data);
+        return;
+      }
+
+      switch (data.type) {
+        case 'ACK':
+          this.handleZoneAcknowledgment(data);
+          break;
+
+        case 'STATUS':
+          this.handleZoneStatusUpdate(data);
+          break;
+
+        case 'ERROR':
+          this.handleZoneError(data);
+          break;
+
+        default:
+          console.warn('⚠️  Unknown zone status type:', data.type);
+      }
+    } catch (error) {
+      console.error('❌ Error processing zone status:', error);
+    }
+  }
+
+  /**
+   * Handle ACK dari ESP32 - Perintah sudah diterima
+   */
+  private handleZoneAcknowledgment(data: ZoneStatusPayload): void {
+    console.log(`✅ ACK received for ${data.command} on zone ${data.zoneId}`);
+    console.log(`   Timestamp: ${data.timestamp}`);
+
+    // TODO: Update watering_command_logs table
+    // await this.updateCommandLog(data.zoneId, data.command, 'ACK_RECEIVED');
+
+    // TODO: Emit WebSocket event ke frontend
+    // this.websocketGateway.emit('zone:ack', data);
+  }
+
+  /**
+   * Handle status update dari ESP32 - Pompa sudah ON/OFF
+   */
+  private handleZoneStatusUpdate(data: ZoneStatusPayload): void {
+    console.log(`🔄 Status update: ${data.status} on zone ${data.zoneId}`);
+    console.log(
+      `   Pump: ${data.pumpStatus}, Solenoid: ${data.solenoidStatus}`,
+    );
+
+    if (data.status === 'WATERING_STARTED') {
+      console.log(
+        `✅ Zone ${data.zoneId} watering STARTED (confirmed by ESP32)`,
+      );
+
+      // TODO: Update database - pompa benar-benar sudah ON
+      // await this.updateZoneRealStatus(data.zoneId, 'ACTIVE');
+
+      // TODO: Update watering_history
+      // await this.wateringHistoryRepository.recordStart(data.zoneId);
+
+      // TODO: Emit WebSocket
+      // this.websocketGateway.emit('zone:started', data);
+    } else if (data.status === 'WATERING_STOPPED') {
+      console.log(
+        `✅ Zone ${data.zoneId} watering STOPPED (confirmed by ESP32)`,
+      );
+      console.log(`   Total duration: ${data.totalDuration} seconds`);
+
+      // TODO: Update database - pompa benar-benar sudah OFF
+      // await this.updateZoneRealStatus(data.zoneId, 'INACTIVE');
+
+      // TODO: Update watering_history dengan actual duration
+      // await this.wateringHistoryRepository.recordStop(
+      //   data.zoneId,
+      //   data.totalDuration
+      // );
+
+      // TODO: Emit WebSocket
+      // this.websocketGateway.emit('zone:stopped', data);
+    }
+
+    // TODO: Update command log
+    // await this.updateCommandLog(data.zoneId, null, 'STATUS_CONFIRMED');
+  }
+
+  /**
+   * Handle error dari ESP32 - Gagal eksekusi perintah
+   */
+  private handleZoneError(data: ZoneStatusPayload): void {
+    console.error(
+      `❌ Error on ${data.command} for zone ${data.zoneId}: ${data.error}`,
+    );
+
+    // TODO: Log error ke database
+    // await this.errorLogRepository.create({
+    //   zoneId: data.zoneId,
+    //   command: data.command,
+    //   error: data.error,
+    //   timestamp: data.timestamp
+    // });
+
+    // TODO: Kirim notifikasi ke admin
+    // await this.notificationService.sendAlert({
+    //   type: 'ZONE_ERROR',
+    //   zoneId: data.zoneId,
+    //   message: `ESP32 failed: ${data.error}`
+    // });
+
+    // TODO: Emit WebSocket error event
+    // this.websocketGateway.emit('zone:error', data);
+
+    // TODO: Update command log
+    // await this.updateCommandLog(data.zoneId, data.command, 'ERROR', data.error);
   }
 }
