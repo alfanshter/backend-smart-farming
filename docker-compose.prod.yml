@@ -1,0 +1,108 @@
+services:
+  # TimescaleDB - PostgreSQL
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: smartfarming-timescaledb
+    # ❌ HAPUS port mapping di production!
+    # ports:
+    #   - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartfarming}
+      POSTGRES_USER: ${POSTGRES_USER:-smartfarming}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # WAJIB di .env
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    restart: unless-stopped
+    networks:
+      - smartfarming-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartfarming}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend NestJS Application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: smartfarming-backend
+    ports:
+      - "3001:3001"  # Bisa diubah jika perlu
+    environment:
+      # Database
+      DATABASE_HOST: timescaledb
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER:-smartfarming}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB:-smartfarming}
+      
+      # Also set DB_ prefix for wait script
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER:-smartfarming}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB:-smartfarming}
+      
+      # JWT - WAJIB dari .env
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-7d}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      
+      # MQTT
+      MQTT_BROKER_URL: ${MQTT_BROKER_URL}
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      
+      # App
+      NODE_ENV: production
+      PORT: ${PORT:-3001}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - smartfarming-network
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    # Resource limits untuk production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # pgAdmin - OPTIONAL di production
+  # Sebaiknya DISABLE di production atau restrict access
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: smartfarming-pgadmin
+  #   ports:
+  #     - "127.0.0.1:5050:80"  # Only localhost
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   restart: unless-stopped
+  #   networks:
+  #     - smartfarming-network
+  #   depends_on:
+  #     - timescaledb
+
+volumes:
+  timescaledb_data:
+    driver: local
+  # pgadmin_data:
+  #   driver: local
+
+networks:
+  smartfarming-network:
+    driver: bridge
