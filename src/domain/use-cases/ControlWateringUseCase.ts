@@ -60,7 +60,9 @@ export class ControlWateringUseCase {
 
     // 4. Kirim command via MQTT
     try {
-      await this.mqttClient.publish(device.mqttTopic, JSON.stringify(payload));
+      // Tambahkan /command di akhir topic agar ESP32 bisa menerima
+      const commandTopic = `${device.mqttTopic}/command`;
+      await this.mqttClient.publish(commandTopic, JSON.stringify(payload));
 
       return {
         success: true,

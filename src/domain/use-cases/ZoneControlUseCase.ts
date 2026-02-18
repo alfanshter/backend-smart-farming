@@ -123,8 +123,10 @@ export class ZoneControlUseCase {
     if (zone.deviceId) {
       const device = await this.deviceRepository.findById(zone.deviceId);
       if (device?.mqttTopic) {
+        // Tambahkan /command di akhir topic agar ESP32 bisa menerima
+        const commandTopic = `${device.mqttTopic}/command`;
         await this.mqttClient.publish(
-          device.mqttTopic,
+          commandTopic,
           JSON.stringify({
             command: 'START_WATERING',
             zoneId: zone.id,
@@ -190,8 +192,10 @@ export class ZoneControlUseCase {
     if (zone.deviceId) {
       const device = await this.deviceRepository.findById(zone.deviceId);
       if (device?.mqttTopic) {
+        // Tambahkan /command di akhir topic agar ESP32 bisa menerima
+        const commandTopic = `${device.mqttTopic}/command`;
         await this.mqttClient.publish(
-          device.mqttTopic,
+          commandTopic,
           JSON.stringify({
             command: 'STOP_WATERING',
             zoneId: zone.id,
@@ -235,8 +239,10 @@ export class ZoneControlUseCase {
     if (zone.deviceId) {
       const device = await this.deviceRepository.findById(zone.deviceId);
       if (device?.mqttTopic) {
+        // Tambahkan /command di akhir topic agar ESP32 bisa menerima
+        const commandTopic = `${device.mqttTopic}/command`;
         await this.mqttClient.publish(
-          device.mqttTopic,
+          commandTopic,
           JSON.stringify({
             command: 'STOP_WATERING',
             zoneId: zone.id,
