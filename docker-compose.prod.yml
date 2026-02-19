@@ -10,8 +10,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-smartfarming}
       POSTGRES_USER: ${POSTGRES_USER:-smartfarming}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # WAJIB di .env
-      TZ: Asia/Jakarta
-      PGTZ: Asia/Jakarta
+      TZ: ${TZ:-Asia/Jakarta}
+      PGTZ: ${PGTZ:-Asia/Jakarta}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -36,21 +36,21 @@ services:
       - "3001:3001"  # Bisa diubah jika perlu
     environment:
       # Timezone
-      TZ: Asia/Jakarta
+      TZ: ${TZ:-Asia/Jakarta}
       
       # Database
-      DATABASE_HOST: timescaledb
-      DATABASE_PORT: 5432
-      DATABASE_USER: ${POSTGRES_USER:-smartfarming}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_NAME: ${POSTGRES_DB:-smartfarming}
+      DATABASE_HOST: ${DATABASE_HOST:-timescaledb}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_USER: ${DATABASE_USER:-smartfarming}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME:-smartfarming}
       
       # Also set DB_ prefix for wait script
-      DB_HOST: timescaledb
-      DB_PORT: 5432
-      DB_USERNAME: ${POSTGRES_USER:-smartfarming}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB:-smartfarming}
+      DB_HOST: ${DB_HOST:-timescaledb}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME:-smartfarming}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-smartfarming}
       
       # JWT - WAJIB dari .env
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
