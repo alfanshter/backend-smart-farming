@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-smartfarming}
       POSTGRES_USER: ${POSTGRES_USER:-smartfarming}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # WAJIB di .env
+      TZ: Asia/Jakarta
+      PGTZ: Asia/Jakarta
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -33,6 +35,9 @@ services:
     ports:
       - "3001:3001"  # Bisa diubah jika perlu
     environment:
+      # Timezone
+      TZ: Asia/Jakarta
+      
       # Database
       DATABASE_HOST: timescaledb
       DATABASE_PORT: 5432

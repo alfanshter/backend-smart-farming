@@ -1,9 +1,13 @@
 # Development Dockerfile with hot-reload
 FROM node:20-alpine
 
-# Install pnpm and postgresql-client for wait script
+# Install pnpm, postgresql-client, and timezone data
 RUN npm install -g pnpm && \
-    apk add --no-cache postgresql-client
+    apk add --no-cache postgresql-client tzdata
+
+# Set timezone to WIB (Asia/Jakarta)
+ENV TZ=Asia/Jakarta
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /app
 
