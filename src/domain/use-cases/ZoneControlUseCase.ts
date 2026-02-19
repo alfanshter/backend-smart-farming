@@ -86,7 +86,7 @@ export class ZoneControlUseCase {
     zoneId: string,
     durationMinutes: number,
     durationSeconds: number,
-    source: string = 'MANUAL',
+    _source: string = 'MANUAL',
   ): Promise<ZoneStatus> {
     const zone = await this.zoneRepository.findById(zoneId);
     if (!zone) {
@@ -95,7 +95,8 @@ export class ZoneControlUseCase {
 
     // Jika zona sudah aktif, hentikan timer lama dulu
     if (this.activeTimers.has(zoneId)) {
-      clearTimeout(this.activeTimers.get(zoneId)!);
+      const timer = this.activeTimers.get(zoneId);
+      if (timer) clearTimeout(timer);
       this.activeTimers.delete(zoneId);
     }
 
@@ -123,10 +124,9 @@ export class ZoneControlUseCase {
     if (zone.deviceId) {
       const device = await this.deviceRepository.findById(zone.deviceId);
       if (device?.mqttTopic) {
-        // Tambahkan /command di akhir topic agar ESP32 bisa menerima
-        const commandTopic = `${device.mqttTopic}/command`;
+        // Topic format: Smartfarming/device1/command
         await this.mqttClient.publish(
-          commandTopic,
+          device.mqttTopic,
           JSON.stringify({
             command: 'START_WATERING',
             zoneId: zone.id,
@@ -153,8 +153,13 @@ export class ZoneControlUseCase {
     this.zoneStatuses.set(zoneId, status);
 
     // Set timer untuk auto-deactivate
-    const timer = setTimeout(async () => {
-      await this.autoDeactivateZone(zoneId);
+    const timer = setTimeout(() => {
+      this.autoDeactivateZone(zoneId).catch((err) => {
+        console.error(
+          `[ZoneControl] Auto-deactivate error for zone ${zoneId}:`,
+          err,
+        );
+      });
     }, totalSeconds * 1000);
 
     this.activeTimers.set(zoneId, timer);
@@ -177,7 +182,8 @@ export class ZoneControlUseCase {
 
     // Clear timer jika ada
     if (this.activeTimers.has(zoneId)) {
-      clearTimeout(this.activeTimers.get(zoneId)!);
+      const timer = this.activeTimers.get(zoneId);
+      if (timer) clearTimeout(timer);
       this.activeTimers.delete(zoneId);
     }
 
@@ -192,10 +198,9 @@ export class ZoneControlUseCase {
     if (zone.deviceId) {
       const device = await this.deviceRepository.findById(zone.deviceId);
       if (device?.mqttTopic) {
-        // Tambahkan /command di akhir topic agar ESP32 bisa menerima
-        const commandTopic = `${device.mqttTopic}/command`;
+        // Topic format: Smartfarming/device1/command
         await this.mqttClient.publish(
-          commandTopic,
+          device.mqttTopic,
           JSON.stringify({
             command: 'STOP_WATERING',
             zoneId: zone.id,
@@ -239,10 +244,9 @@ export class ZoneControlUseCase {
     if (zone.deviceId) {
       const device = await this.deviceRepository.findById(zone.deviceId);
       if (device?.mqttTopic) {
-        // Tambahkan /command di akhir topic agar ESP32 bisa menerima
-        const commandTopic = `${device.mqttTopic}/command`;
+        // Topic format: Smartfarming/device1/command
         await this.mqttClient.publish(
-          commandTopic,
+          device.mqttTopic,
           JSON.stringify({
             command: 'STOP_WATERING',
             zoneId: zone.id,

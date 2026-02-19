@@ -11,7 +11,12 @@
  * Menggunakan node-cron untuk scheduling.
  */
 
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import * as cron from 'node-cron';
 import { GetAutoDripScheduleUseCase } from '../../domain/use-cases/GetAutoDripScheduleUseCase';
 import { ZoneControlUseCase } from '../../domain/use-cases/ZoneControlUseCase';
@@ -72,42 +77,53 @@ export class AutoDripSchedulerService implements OnModuleInit, OnModuleDestroy {
   private async checkAndTriggerWatering() {
     try {
       const now = new Date();
-      this.logger.debug(`⏰ Checking schedules at ${now.toISOString()}`);
+      const currentHour = now.getHours().toString().padStart(2, '0');
+      const currentMinute = now.getMinutes().toString().padStart(2, '0');
+      const currentTimeString = `${currentHour}:${currentMinute}`;
+
+      this.logger.log(`Checking schedules at ${currentTimeString}`);
 
       // Get all active schedules
       const activeSchedules = await this.getScheduleUseCase.getAllActive();
-      
+
       if (activeSchedules.length === 0) {
-        this.logger.debug('No active schedules found');
+        this.logger.log('No active schedules found');
         return;
       }
 
-      this.logger.debug(`Found ${activeSchedules.length} active schedule(s)`);
+      this.logger.log(`Found ${activeSchedules.length} active schedules`);
 
       // Check each schedule
       for (const schedule of activeSchedules) {
+        this.logger.log(`Checking schedule for zone ${schedule.zoneId}`);
+        this.logger.log(`Time slots: ${JSON.stringify(schedule.timeSlots)}`);
+        this.logger.log(`Active days: ${JSON.stringify(schedule.activeDays)}`);
+
         if (schedule.shouldRunNow(now)) {
           this.logger.log(
-            `✅ Schedule matched! Zone: ${schedule.zoneId}, Time: ${now.toLocaleTimeString()}`,
+            `MATCHED! Zone: ${schedule.zoneId}, Time: ${currentTimeString}`,
           );
-
-          // Find the matching time slot to get duration
-          const currentHour = now.getHours().toString().padStart(2, '0');
-          const currentMinute = now.getMinutes().toString().padStart(2, '0');
-          const currentTimeString = `${currentHour}:${currentMinute}`;
 
           const matchingSlot = schedule.timeSlots.find(
             (slot) => slot.startTime === currentTimeString,
           );
 
           if (matchingSlot) {
+            this.logger.log(
+              `Matched slot: ${matchingSlot.startTime} Duration: ${matchingSlot.durationMinutes}m ${matchingSlot.durationSeconds}s`,
+            );
+
             // Trigger watering
             await this.triggerWatering(
               schedule.zoneId,
               matchingSlot.durationMinutes,
               matchingSlot.durationSeconds,
             );
+          } else {
+            this.logger.warn(`Schedule matched but no matching slot found!`);
           }
+        } else {
+          this.logger.log(`Schedule does NOT match current time/day`);
         }
       }
     } catch (error) {
@@ -137,7 +153,10 @@ export class AutoDripSchedulerService implements OnModuleInit, OnModuleDestroy {
 
       this.logger.log(`✅ Auto drip watering started for zone ${zoneId}`);
     } catch (error) {
-      this.logger.error(`❌ Failed to trigger watering for zone ${zoneId}:`, error);
+      this.logger.error(
+        `❌ Failed to trigger watering for zone ${zoneId}:`,
+        error,
+      );
     }
   }
 
