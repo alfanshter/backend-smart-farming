@@ -149,7 +149,27 @@ docker-compose -f docker-compose.prod.yml logs backend
 docker-compose -f docker-compose.prod.yml logs timescaledb
 ```
 
-### Database connection error
+### Database connection error - `EAI_AGAIN timescaledb`
+
+**Symptoms:**
+```
+Error: getaddrinfo EAI_AGAIN timescaledb
+```
+
+**Cause:** DNS resolution race condition saat container baru start. Backend mencoba connect sebelum Docker DNS ready.
+
+**Solution:** 
+
+1. **Automatic Retry** - Backend akan retry otomatis, biasanya berhasil dalam 1-2 detik
+2. **Wait for DB Script** - Script `wait-for-db.sh` sudah menghandle ini
+3. **Restart jika persist:**
+   ```bash
+   docker-compose -f docker-compose.prod.yml restart backend
+   ```
+
+**Prevention:** Pastikan `depends_on` dengan `service_healthy` sudah configured di docker-compose.prod.yml
+
+### Database connection error (general)
 
 ```bash
 # Masuk ke container backend
@@ -243,17 +263,26 @@ docker system prune -a
 # Start production
 ./deploy-vps.sh
 
+# Monitor real-time (auto refresh every 5s)
+./monitor-vps.sh
+
 # Check status
 docker-compose -f docker-compose.prod.yml ps
 
 # View logs
 docker-compose -f docker-compose.prod.yml logs -f
 
+# View logs (last 100 lines)
+docker-compose -f docker-compose.prod.yml logs --tail=100 backend
+
 # Stop all
 docker-compose -f docker-compose.prod.yml down
 
 # Restart backend only
 docker-compose -f docker-compose.prod.yml restart backend
+
+# Check resource usage
+docker stats
 
 # Database backup
 docker exec smartfarming-timescaledb pg_dump -U smartfarming smartfarming > backup_$(date +%Y%m%d).sql

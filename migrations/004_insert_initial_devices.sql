@@ -17,7 +17,7 @@ INSERT INTO devices (
     'f17ee499-c275-4197-8fef-2a30271a3380',
     'ESP32 Device 1',
     'ESP32_WATERING_CONTROLLER',
-    'Smartfarming/device1',
+    'Smartfarming/device1/command',
     'ONLINE',
     true,
     NOW(),
@@ -46,7 +46,7 @@ INSERT INTO devices (
     'd17ee499-c275-4197-8fef-2a30271a3381',
     'ESP32 Device 2',
     'ESP32_WATERING_CONTROLLER',
-    'Smartfarming/device2',
+    'Smartfarming/device2/command',
     'OFFLINE',
     true,
     NOW(),
@@ -58,7 +58,7 @@ INSERT INTO devices (
     'd17ee499-c275-4197-8fef-2a30271a3382',
     'ESP32 Device 3',
     'ESP32_WATERING_CONTROLLER',
-    'Smartfarming/device3',
+    'Smartfarming/device3/command',
     'OFFLINE',
     true,
     NOW(),
@@ -74,5 +74,5 @@ UPDATE zones SET device_id = 'd17ee499-c275-4197-8fef-2a30271a3382' WHERE name =
 
 -- Comments
 COMMENT ON COLUMN devices.id IS 'UUID device, matching dengan deviceId dari ESP32';
-COMMENT ON COLUMN devices.mqtt_topic IS 'MQTT topic prefix untuk device ini (tanpa /sensor atau /status)';
+COMMENT ON COLUMN devices.mqtt_topic IS 'MQTT topic LENGKAP untuk publish command (contoh: Smartfarming/device1/command)';
 COMMENT ON COLUMN devices.metadata IS 'JSON metadata berisi location, firmware version, capabilities, dll';

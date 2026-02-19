@@ -75,14 +75,12 @@ services:
       timescaledb:
         condition: service_healthy
     # Resource limits untuk production
+    # Note: reservations tidak didukung di Docker Compose standalone
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   # pgAdmin - OPTIONAL di production
   # Sebaiknya DISABLE di production atau restrict access

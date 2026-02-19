@@ -95,7 +95,7 @@ INSERT INTO devices (
     'f17ee499-c275-4197-8fef-2a30271a3380',
     'ESP32 Device 1',
     'ESP32_WATERING_CONTROLLER',
-    'Smartfarming/device1',
+    'Smartfarming/device1/command',
     'ONLINE',
     true,
     NOW(),
