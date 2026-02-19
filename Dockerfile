@@ -40,14 +40,28 @@ RUN pnpm install --prod --frozen-lockfile
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy wait script
-COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
-RUN chmod +x /usr/local/bin/wait-for-db.sh
+# Create wait-for-db script directly in the image
+RUN echo '#!/bin/sh' > /app/wait-for-db.sh && \
+    echo 'set -e' >> /app/wait-for-db.sh && \
+    echo 'host="${DB_HOST:-timescaledb}"' >> /app/wait-for-db.sh && \
+    echo 'port="${DB_PORT:-5432}"' >> /app/wait-for-db.sh && \
+    echo 'user="${DB_USERNAME:-smartfarming}"' >> /app/wait-for-db.sh && \
+    echo 'database="${DB_NAME:-smartfarming}"' >> /app/wait-for-db.sh && \
+    echo 'echo "🔍 Waiting for database at $host:$port..."' >> /app/wait-for-db.sh && \
+    echo 'echo "📊 Database: $database"' >> /app/wait-for-db.sh && \
+    echo 'echo "👤 User: $user"' >> /app/wait-for-db.sh && \
+    echo 'until PGPASSWORD="${DB_PASSWORD}" psql -h "$host" -U "$user" -d "$database" -c "\\q" 2>/dev/null; do' >> /app/wait-for-db.sh && \
+    echo '  >&2 echo "⏳ Database is unavailable - sleeping for 2 seconds..."' >> /app/wait-for-db.sh && \
+    echo '  sleep 2' >> /app/wait-for-db.sh && \
+    echo 'done' >> /app/wait-for-db.sh && \
+    echo '>&2 echo "✅ Database is up and ready!"' >> /app/wait-for-db.sh && \
+    echo 'echo "🚀 Starting application..."' >> /app/wait-for-db.sh && \
+    echo 'exec "$@"' >> /app/wait-for-db.sh && \
+    chmod +x /app/wait-for-db.sh
 
 # Expose port
 EXPOSE 3001
 
 # Wait for database then start the application
-# Use ENTRYPOINT instead of CMD to override Node's default entrypoint
-ENTRYPOINT ["/usr/local/bin/wait-for-db.sh"]
+ENTRYPOINT ["/app/wait-for-db.sh"]
 CMD ["node", "dist/main.js"]
