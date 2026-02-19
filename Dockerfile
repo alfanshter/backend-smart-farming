@@ -48,5 +48,6 @@ RUN chmod +x /usr/local/bin/wait-for-db.sh
 EXPOSE 3001
 
 # Wait for database then start the application
-# CMD ["sh", "-c", "wait-for-db.sh timescaledb node dist/main.js"]
-CMD ["/usr/local/bin/wait-for-db.sh", "node", "dist/main.js"]
+# Use ENTRYPOINT instead of CMD to override Node's default entrypoint
+ENTRYPOINT ["/usr/local/bin/wait-for-db.sh"]
+CMD ["node", "dist/main.js"]

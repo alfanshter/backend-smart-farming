@@ -28,4 +28,6 @@ COPY . .
 EXPOSE 3001
 
 # Wait for database then start in development mode
-CMD ["/usr/local/bin/wait-for-db.sh", "pnpm", "run", "start:dev"]
+# Use ENTRYPOINT instead of CMD to override Node's default entrypoint
+ENTRYPOINT ["/usr/local/bin/wait-for-db.sh"]
+CMD ["pnpm", "run", "start:dev"]
