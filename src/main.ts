@@ -4,7 +4,9 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+  });
 
   // Enable CORS for frontend - MUST be set BEFORE helmet
   const allowedOrigins = [
@@ -22,10 +24,13 @@ async function bootstrap() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
+      console.log('🔍 CORS Request from origin:', origin);
       // Allow requests with no origin (like mobile apps, Postman, curl)
       if (!origin || allowedOrigins.includes(origin)) {
+        console.log('✅ CORS Allowed for origin:', origin);
         callback(null, true);
       } else {
+        console.log('❌ CORS Blocked for origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -34,6 +39,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     exposedHeaders: ['Authorization'],
     maxAge: 3600, // Cache preflight request for 1 hour
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Security Headers - configure after CORS to avoid conflicts
