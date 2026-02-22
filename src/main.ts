@@ -6,10 +6,7 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security Headers
-  app.use(helmet());
-
-  // Enable CORS for frontend
+  // Enable CORS for frontend - MUST be set BEFORE helmet
   const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -38,6 +35,14 @@ async function bootstrap() {
     exposedHeaders: ['Authorization'],
     maxAge: 3600, // Cache preflight request for 1 hour
   });
+
+  // Security Headers - configure after CORS to avoid conflicts
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    }),
+  );
 
   // Enable validation globally
   app.useGlobalPipes(
