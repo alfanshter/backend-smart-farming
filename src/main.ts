@@ -13,10 +13,10 @@ async function bootstrap() {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'http://agrogonta.ptpws.id',
-    'https://agrogonta.ptpws.id',
-    'http://smartfarming.ptpws.id',
-    'https://smartfarming.ptpws.id',
+    'http://api.agrogonta.tech',
+    'https://api.agrogonta.tech',
+    'http://agrogonta.tech',
+    'https://agrogonta.tech',
     // Add more domains as needed
   ];
 
